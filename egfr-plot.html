@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eGFR経過プロット｜はら内科医院</title>
+<style>
+  :root{
+    --ink:#3a3128; --paper:#fdf6ec; --panel:#ffffff; --line:#ecd9bd;
+    --accent:#ef9229; --accent-g:#6aab2d; --accent2:#c0202a;
+    --g1:#bfe3bf; --g2:#d9eebf; --g3a:#fdf3b0; --g3b:#fbdc8e; --g4:#f5b97f; --g5:#ef9d9d;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Hiragino Sans","Yu Gothic UI","Noto Sans JP",sans-serif;background:var(--paper);color:var(--ink);font-size:14px}
+  header{background:linear-gradient(90deg,#f9a94f,#f7c66f);color:#fff;padding:10px 18px;display:flex;align-items:baseline;gap:14px}
+  header h1{font-size:17px;margin:0;font-weight:700;letter-spacing:.05em}
+  header span{font-size:12px;opacity:.85}
+  .wrap{display:grid;grid-template-columns:330px 1fr;gap:12px;padding:12px;max-width:1500px;margin:0 auto}
+  @media(max-width:980px){.wrap{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px}
+  .panel h2{font-size:13px;margin:0 0 8px;color:#d97f14;border-bottom:2px solid var(--accent);padding-bottom:4px}
+  textarea{width:100%;height:120px;font-family:Menlo,Consolas,monospace;font-size:12px;border:1px solid var(--line);border-radius:5px;padding:6px;resize:vertical}
+  label{display:block;font-size:12px;margin:8px 0 3px;color:#445}
+  input[type=date],input[type=number]{border:1px solid var(--line);border-radius:5px;padding:5px;font-size:13px;width:100%}
+  button{background:var(--accent-g);color:#fff;border:none;border-radius:5px;padding:7px 12px;font-size:13px;cursor:pointer;margin-top:8px}
+  button.sub{background:#f0a544}
+  button.del{background:var(--accent2);padding:3px 8px;font-size:11px;margin:0}
+  button:hover{filter:brightness(1.1)}
+  .row{display:flex;gap:6px}
+  .row>*{flex:1}
+  .hint{font-size:11px;color:#67808d;margin-top:4px;line-height:1.5}
+  .regline{border:1px solid var(--line);border-radius:6px;padding:8px;margin-top:8px;background:#fffaf2}
+  .regline .meta{font-size:12px;margin-top:5px;line-height:1.6}
+  .regline .slope{font-weight:700;color:var(--accent2)}
+  svg{width:100%;height:auto;display:block;user-select:none}
+  #chart svg{cursor:crosshair}
+  .stat{font-size:12px;color:#445;margin-top:6px}
+  .legend{display:flex;gap:14px;font-size:12px;margin-top:6px;flex-wrap:wrap}
+  .legend span{display:flex;align-items:center;gap:4px}
+  .dot{width:10px;height:10px;border-radius:50%;background:#8fb3e0;display:inline-block}
+  .bar{width:10px;height:10px;background:#b3b378;display:inline-block}
+  .rl{width:16px;height:0;border-top:2px solid #c0202a;display:inline-block}
+  .clinic{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .clinicR{display:flex;align-items:center;gap:8px;text-align:right}
+  .today{font-size:11px;color:#67808d}
+  .clinic .name{font-size:13px;font-weight:700;color:#ef9229;letter-spacing:.06em}
+  .clinic h2{margin:0;border:none;padding:0;font-size:14px;color:var(--ink)}
+  .dragnote{font-size:12px;color:#d97f14;font-weight:600;margin-top:2px}
+  .parsed{font-size:12px;color:#2c6e3c;margin-top:4px}
+
+  #printSummary{display:none}
+  @media print{
+    @page{size:A4 landscape;margin:8mm}
+    body{background:#fff;font-size:11px}
+    header,.wrap>div:first-child,#printBtn,.legend,.stat{display:none!important}
+    .wrap{display:block;padding:0;max-width:none}
+    .panel{border:none;padding:0;page-break-inside:avoid}
+    #chart svg{max-height:118mm;width:auto;max-width:100%;margin:0 auto}
+    .clinic{margin-bottom:2px}
+    #printSummary{display:block;margin-top:4px;font-size:10.5px;line-height:1.55;columns:2;column-gap:8mm}
+    #printSummary h3{font-size:11.5px;color:#3a7d22;margin:3px 0 1px;border-bottom:1px solid #ccc;break-after:avoid}
+    #printSummary p{margin:2px 0}
+  }
+</style>
+</head>
+<body>
+<header><h1>eGFR 経過プロット</h1><span>LTEP風 ｜ カルテからコピペ → プロット・回帰・将来予測</span></header>
+<div class="wrap">
+  <div>
+    <div class="panel">
+      <h2>1. eGFRデータ貼り付け</h2>
+      <textarea id="egfrInput" placeholder="デジカルの検査結果表をそのまま範囲選択してコピペでOK。
+日付と数値のペアを自動で拾います。
+（縦並び・横並び・表形式いずれも可）"></textarea>
+      <div class="parsed" id="egfrParsed"></div>
+      <div class="hint">日付（2024/1/5、2024-01-05、2024年1月5日、R6.1.5）の直後に出てくる数値をeGFRとして自動ペアリング。日付だけの行が並び、その後に数値だけの行が並ぶ形式（表の列コピー）も自動で対応します。</div>
+      <label>尿蛋白データ（任意・棒グラフ表示）</label>
+      <textarea id="upInput" style="height:70px" placeholder="同様に日付と数値（g/gCr または g/日）のペアを貼り付け"></textarea>
+      <label>生年月日（年齢軸・年齢指定に使用）</label>
+      <input type="date" id="dob">
+      <label>X軸範囲（日付または年齢のどちらでも。年齢入力で日付が自動セット）</label>
+      <div class="row">
+        <div><input type="date" id="xStart"></div>
+        <div><input type="number" id="xStartAge" placeholder="開始年齢(既定40)" min="0" max="120" step="1"></div>
+      </div>
+      <div class="row">
+        <div><input type="date" id="xEnd"></div>
+        <div><input type="number" id="xEndAge" placeholder="終了年齢(既定100)" min="0" max="120" step="1"></div>
+      </div>
+      <button id="plotBtn">プロット</button>
+      <button id="demoBtn" class="sub">デモデータ</button>
+    </div>
+    <div class="panel" style="margin-top:12px">
+      <h2>2. 腎機能の傾き</h2>
+      <div class="dragnote">★ グラフ上をマウスで横にドラッグするだけで傾きの線を追加できます</div>
+      <div class="hint">手入力する場合は下に日付または年齢を入れて「追加」。</div>
+      <div class="row">
+        <div><label>開始日</label><input type="date" id="regStart"></div>
+        <div><label>開始年齢</label><input type="number" id="regStartAge" min="0" max="120" step="0.5" placeholder="歳"></div>
+      </div>
+      <div class="row">
+        <div><label>終了日</label><input type="date" id="regEnd"></div>
+        <div><label>終了年齢</label><input type="number" id="regEndAge" min="0" max="120" step="0.5" placeholder="歳"></div>
+      </div>
+      <button id="addRegBtn">この範囲で傾きを計算</button>
+      <div id="regList"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="clinic">
+      <h2 style="font-size:16px;color:#6aab2d">経過グラフ <button id="printBtn" class="sub" style="margin:0 0 0 8px;padding:4px 10px;font-size:12px;background:#6aab2d">印刷</button></h2>
+      <div class="clinicR">
+        <img src="data:image/png;base64,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" alt="ロゴ" width="30" height="30">
+        <div>
+          <div class="name">はら内科医院</div>
+          <div class="today" id="todayLabel"></div>
+        </div>
+      </div>
+    </div>
+    <div id="chart"></div>
+    <div class="legend">
+      <span><i class="dot"></i>eGFR (mL/min/1.73m²)</span>
+      <span><i class="bar"></i>尿蛋白 (g)</span>
+      <span><i class="rl"></i>腎機能の傾き</span>
+    </div>
+    <div class="stat" id="stat"></div>
+    <div id="printSummary"></div>
+  </div>
+</div>
+
+<script>
+const DAY=86400000, YEAR=365.25*DAY;
+let egfr=[], uprot=[], regs=[];
+let view={t0:null,t1:null,mL:55,mR:55,mT:15,mB:95,W:1000,H:585};
+
+/* ---------- 日付・年齢ユーティリティ ---------- */
+function dobDate(){return document.getElementById('dob').valueAsDate;}
+function ageAt(date){const d=dobDate(); return d?(date-d)/YEAR:null;}
+function dateAtAge(a){const d=dobDate(); return d?new Date(d.getTime()+a*YEAR):null;}
+function fmtAge(a){const y=Math.floor(a),m=Math.floor((a-y)*12);return y+'歳'+m+'カ月';}
+function fmtD(d){return d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate();}
+
+/* ---------- スマート貼り付けパーサ ----------
+   テキスト全体から「日付」と「数値」をトークンとして抽出し、
+   ① 日付の直後の数値をペアにする（縦並び・横並び・表コピー対応）
+   ② ①で組めない場合、日付列→数値列が分かれて並ぶ形式（列単位コピー）をzipで対応 */
+function smartParse(text){
+  if(!text.trim()) return {data:[],note:''};
+  const wareki={R:2018,H:1988,S:1925}; // 令和/平成/昭和 + 年
+  // 和暦を西暦に前処理
+  text=text.replace(/([RHS令平昭])[\.年]?(\d{1,2})[\.\/年](\d{1,2})[\.\/月](\d{1,2})日?/g,(m,e,y,mo,d)=>{
+    const k=e==='令'?'R':e==='平'?'H':e==='昭'?'S':e;
+    return (wareki[k]+ +y)+'/'+mo+'/'+d;
+  });
+  const re=/(\d{4})[\/\-\.年]\s?(\d{1,2})[\/\-\.月]\s?(\d{1,2})日?|(-?\d+(?:\.\d+)?)/g;
+  const toks=[]; let m;
+  while((m=re.exec(text))!==null){
+    if(m[1]) toks.push({t:'d',v:new Date(+m[1],+m[2]-1,+m[3])});
+    else toks.push({t:'n',v:parseFloat(m[4])});
+  }
+  // ① 直後ペアリング
+  const pairs=[]; const dates=[]; const nums=[];
+  for(let i=0;i<toks.length;i++){
+    if(toks[i].t==='d'){
+      dates.push(toks[i].v);
+      if(toks[i+1] && toks[i+1].t==='n'){ pairs.push({d:toks[i].v,v:toks[i+1].v}); i++; }
+    } else nums.push(toks[i].v);
+  }
+  let data=pairs, note='隣接ペアとして認識';
+  // ② 列コピー形式（日付がまとまって並び、その後に数値がまとまる）
+  if(pairs.length < dates.length && dates.length===nums.length && dates.length>1){
+    data=dates.map((d,i)=>({d,v:nums[i]}));
+    note='日付列＋数値列としてzip認識';
+  }
+  data=data.filter(p=>isFinite(p.v)&&p.v>0&&p.v<200).sort((a,b)=>a.d-b.d);
+  return {data,note};
+}
+
+function linReg(pts){
+  const n=pts.length; if(n<2) return null;
+  const x0=pts[0].d.getTime();
+  let sx=0,sy=0,sxx=0,sxy=0;
+  for(const p of pts){const x=(p.d.getTime()-x0)/YEAR; sx+=x; sy+=p.v; sxx+=x*x; sxy+=x*p.v;}
+  const den=n*sxx-sx*sx; if(den===0) return null;
+  const slope=(n*sxy-sx*sy)/den, ic=(sy-slope*sx)/n;
+  return {x0,slope,ic,n,
+    at:t=>ic+slope*((t-x0)/YEAR),
+    when:v=>slope>=0?null:new Date(x0+(v-ic)/slope*YEAR)};
+}
+
+const stages=[[90,130,'var(--g1)','G1'],[60,90,'var(--g2)','G2'],[45,60,'var(--g3a)','G3a'],
+  [30,45,'var(--g3b)','G3b'],[15,30,'var(--g4)','G4'],[0,15,'var(--g5)','G5']];
+
+/* ---------- 描画 ---------- */
+function draw(){
+  const el=document.getElementById('chart');
+  if(!egfr.length){el.innerHTML='<div class="hint">データを貼り付けて「プロット」を押してください。</div>';return;}
+  const {W,H,mL,mR,mT,mB}=view;
+  const pw=W-mL-mR, ph=H-mT-mB;
+  let t0=document.getElementById('xStart').valueAsDate?.getTime() ?? (dobDate()?dateAtAge(40).getTime():egfr[0].d.getTime()-180*DAY);
+  let t1=document.getElementById('xEnd').valueAsDate?.getTime() ?? (dobDate()?dateAtAge(100).getTime():egfr[egfr.length-1].d.getTime()+5*YEAR);
+  if(t1<=t0) t1=t0+YEAR;
+  view.t0=t0; view.t1=t1;
+  const yMax=130;
+  const X=t=>mL+(t-t0)/(t1-t0)*pw;
+  const Y=v=>mT+(1-v/yMax)*ph;
+  const upMax=Math.max(4,...uprot.map(p=>p.v))*1.15;
+  const Yu=v=>mT+ph-(v/upMax)*ph;
+
+  let s=`<svg id="plotSvg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-size="12">`;
+  for(const [lo,hi,c,lab] of stages){
+    s+=`<rect x="${mL}" y="${Y(hi)}" width="${pw}" height="${Y(lo)-Y(hi)}" fill="${c}"/>`;
+    s+=`<text x="${mL+5}" y="${Y(hi)+18}" fill="#33503a" font-size="16" font-weight="600" opacity=".75">${lab}</text>`;
+  }
+  for(let v=0;v<=yMax;v+=10){
+    s+=`<line x1="${mL}" y1="${Y(v)}" x2="${mL+pw}" y2="${Y(v)}" stroke="#00000018"/>`;
+    if(v%20===0) s+=`<text x="${mL-6}" y="${Y(v)+5}" text-anchor="end" font-size="15">${v}</text>`;
+  }
+  s+=`<text transform="rotate(-90 14 ${mT+ph/2})" x="14" y="${mT+ph/2}" text-anchor="middle" fill="#5b87b8" font-size="14">eGFR (mL/min/1.73m²)</text>`;
+  for(let v=0;v<=upMax;v+=upMax>8?2:1) s+=`<text x="${mL+pw+6}" y="${Yu(v)+5}" font-size="14">${v}</text>`;
+  s+=`<text transform="rotate(90 ${W-12} ${mT+ph/2})" x="${W-12}" y="${mT+ph/2}" text-anchor="middle" fill="#9a9a60" font-size="14">尿蛋白 (g)</text>`;
+  const spanY=(t1-t0)/YEAR;
+  const step= spanY>45?10 : spanY>22?5 : spanY>12?2 : 1; // 期間に応じた刻み
+  const d0=new Date(t0);
+  for(let y=d0.getFullYear();;y++){
+    const t=new Date(y,0,1).getTime(); if(t>t1)break; if(t<t0)continue;
+    const major=(y%step===0);
+    s+=`<line x1="${X(t)}" y1="${mT}" x2="${X(t)}" y2="${mT+ph}" stroke="${major?'#00000030':'#00000012'}"/>`;
+    if(!major) continue;
+    s+=`<text x="${X(t)}" y="${mT+ph+18}" text-anchor="middle" font-size="13">${y}年</text>`;
+    const a=ageAt(new Date(t));
+    if(a!==null) s+=`<text x="${X(t)}" y="${mT+ph+34}" text-anchor="middle" fill="#555" font-size="13">${Math.floor(a)}歳</text>`;
+  }
+  const bw=Math.max(3,Math.min(10,pw/Math.max(uprot.length*3,40)));
+  for(const p of uprot){
+    const t=p.d.getTime(); if(t<t0||t>t1)continue;
+    s+=`<rect x="${X(t)-bw/2}" y="${Yu(p.v)}" width="${bw}" height="${mT+ph-Yu(p.v)}" fill="#b3b378" opacity=".55"><title>${fmtD(p.d)} 尿蛋白 ${p.v} g</title></rect>`;
+  }
+  let reachRow=0;
+  regs.forEach(r=>{
+    const reg=r.reg;
+    let te=t1; const hit0=reg.when(0); if(hit0&&hit0.getTime()<te) te=hit0.getTime();
+    const ts=Math.max(t0,r.s.getTime());
+    s+=`<line x1="${X(ts)}" y1="${Y(reg.at(ts))}" x2="${X(te)}" y2="${Y(reg.at(te))}" stroke="#c0202a" stroke-width="2.2"/>`;
+    const w=reg.when(10);
+    if(w&&w.getTime()>ts&&w.getTime()<=t1){
+      s+=`<line x1="${X(w)}" y1="${Y(10)}" x2="${X(w)}" y2="${mT+ph}" stroke="#c0202a" stroke-dasharray="3 3"/>`;
+      const a=ageAt(w);
+      const row=reachRow++; // 直線ごとに段をずらす
+      s+=`<text x="${X(w)}" y="${mT+ph+50+row*15}" text-anchor="middle" fill="#c0202a" font-weight="bold" font-size="13">${a!==null?fmtAge(a):fmtD(w)}</text>`;
+    }
+  });
+  for(const p of egfr){
+    const t=p.d.getTime(); if(t<t0||t>t1)continue;
+    s+=`<circle cx="${X(t)}" cy="${Y(p.v)}" r="4" fill="#8fb3e0"><title>${fmtD(p.d)} eGFR ${p.v}</title></circle>`;
+  }
+  s+=`<rect id="selRect" x="0" y="${mT}" width="0" height="${ph}" fill="#ef9229" opacity=".18" pointer-events="none"/>`;
+  s+=`<rect x="${mL}" y="${mT}" width="${pw}" height="${ph}" fill="none" stroke="#445"/>`;
+  s+='</svg>';
+  el.innerHTML=s;
+  attachDrag();
+
+  const last=egfr[egfr.length-1];
+  document.getElementById('stat').textContent=
+    `データ数: ${egfr.length}点 ｜ 期間: ${fmtD(egfr[0].d)} 〜 ${fmtD(last.d)} ｜ 最新 eGFR ${last.v}`+
+    (ageAt(last.d)!==null?`（${fmtAge(ageAt(last.d))}時点）`:'');
+}
+
+/* ---------- ドラッグで回帰範囲選択 ---------- */
+function attachDrag(){
+  const svg=document.getElementById('plotSvg'); if(!svg) return;
+  const sel=svg.querySelector('#selRect');
+  let dragging=false, x1=0;
+  const pxToSvgX=(clientX)=>{
+    const r=svg.getBoundingClientRect();
+    return (clientX-r.left)/r.width*view.W;
+  };
+  const svgXToTime=(sx)=>{
+    const pw=view.W-view.mL-view.mR;
+    return view.t0+(sx-view.mL)/pw*(view.t1-view.t0);
+  };
+  const start=e=>{dragging=true;x1=pxToSvgX(e.clientX??e.touches[0].clientX);sel.setAttribute('x',x1);sel.setAttribute('width',0);};
+  const move=e=>{
+    if(!dragging)return;
+    const x2=pxToSvgX(e.clientX??e.touches[0].clientX);
+    sel.setAttribute('x',Math.min(x1,x2)); sel.setAttribute('width',Math.abs(x2-x1));
+  };
+  const end=e=>{
+    if(!dragging)return; dragging=false;
+    const x2=pxToSvgX(e.clientX??(e.changedTouches&&e.changedTouches[0].clientX)??x1);
+    sel.setAttribute('width',0);
+    if(Math.abs(x2-x1)<8) return; // クリックは無視
+    const ta=svgXToTime(Math.min(x1,x2)), tb=svgXToTime(Math.max(x1,x2));
+    addRegression(new Date(ta),new Date(tb),true);
+  };
+  svg.addEventListener('mousedown',start); svg.addEventListener('mousemove',move);
+  window.addEventListener('mouseup',end);
+  svg.addEventListener('touchstart',start,{passive:true}); svg.addEventListener('touchmove',move,{passive:true});
+  svg.addEventListener('touchend',end);
+}
+
+function addRegression(s,e,silent){
+  const pts=egfr.filter(p=>p.d>=s&&p.d<=e);
+  if(pts.length<2){ if(!silent) alert('指定範囲内のデータが2点未満です'); return; }
+  const reg=linReg(pts); if(!reg) return;
+  regs.push({s,e,reg}); renderRegList(); draw();
+}
+
+function renderRegList(){
+  const el=document.getElementById('regList'); el.innerHTML='';
+  regs.forEach((r,i)=>{
+    const reg=r.reg, w15=reg.when(15), w10=reg.when(10);
+    const div=document.createElement('div'); div.className='regline';
+    const ageStr=w=>w?(ageAt(w)!==null?fmtAge(ageAt(w))+'（'+fmtD(w)+'）':fmtD(w)):'到達せず（傾き≧0）';
+    const rangeAge = ageAt(r.s)!==null ? `（${fmtAge(ageAt(r.s))}〜${fmtAge(ageAt(r.e))}）`:'';
+    div.innerHTML=`<b>傾き ${i+1}</b>：${fmtD(r.s)} 〜 ${fmtD(r.e)} ${rangeAge}（n=${reg.n}）
+      <button class="del" data-i="${i}">削除</button>
+      <div class="meta">傾き <span class="slope">${reg.slope.toFixed(2)} /年</span><br>
+      eGFR 15 到達予測：${ageStr(w15)}<br>eGFR 10 到達予測：${ageStr(w10)}</div>`;
+    el.appendChild(div);
+  });
+  el.querySelectorAll('.del').forEach(b=>b.onclick=()=>{regs.splice(+b.dataset.i,1);renderRegList();draw();});
+}
+
+/* ---------- 年齢⇔日付の双方向リンク ---------- */
+function linkAge(dateId,ageId){
+  const dEl=document.getElementById(dateId), aEl=document.getElementById(ageId);
+  aEl.addEventListener('change',()=>{
+    const d=dateAtAge(parseFloat(aEl.value));
+    if(d){ dEl.valueAsDate=d; draw(); } else alert('先に生年月日を入力してください');
+  });
+  dEl.addEventListener('change',()=>{
+    const a=dEl.valueAsDate?ageAt(dEl.valueAsDate):null;
+    if(a!==null&&isFinite(a)) aEl.value=a.toFixed(1);
+    draw();
+  });
+}
+linkAge('xStart','xStartAge'); linkAge('xEnd','xEndAge');
+linkAge('regStart','regStartAge'); linkAge('regEnd','regEndAge');
+
+/* ---------- ボタン ---------- */
+document.getElementById('plotBtn').onclick=()=>{
+  const r1=smartParse(document.getElementById('egfrInput').value);
+  const r2=smartParse(document.getElementById('upInput').value);
+  egfr=r1.data; uprot=r2.data;
+  document.getElementById('egfrParsed').textContent=
+    egfr.length?`✓ ${egfr.length}点を認識（${r1.note}）`:'⚠ データを認識できませんでした';
+  draw();
+};
+document.getElementById('addRegBtn').onclick=()=>{
+  const s=document.getElementById('regStart').valueAsDate, e=document.getElementById('regEnd').valueAsDate;
+  if(!s||!e||!egfr.length){alert('データのプロットと範囲の指定が必要です');return;}
+  addRegression(s,e,false);
+};
+document.getElementById('dob').addEventListener('change',draw);
+document.getElementById('printBtn').onclick=()=>{
+  const el=document.getElementById('printSummary');
+  let h='<h3>腎機能（eGFR）の経過について</h3>'
+    +'<p>青い点は腎機能の指標であるeGFR（推算糸球体ろ過量）の検査値です。背景の色は腎臓の働きの段階（緑：良好 〜 赤：低下）を表しています。棒グラフは尿蛋白の量です。</p>';
+  if(regs.length){
+    h+='<h3>腎機能の傾き</h3>';
+    regs.forEach((r,i)=>{
+      const sl=r.reg.slope;
+      h+=`<p>傾き ${i+1}（${fmtD(r.s)} 〜 ${fmtD(r.e)}）：この期間、eGFRは1年あたり約 ${Math.abs(sl).toFixed(1)} ${sl<0?'低下':'上昇'}しています。赤い線はこのペースが続いた場合の見込みです。</p>`;
+    });
+    h+='<p>腎機能の低下をゆるやかにするには、血圧・塩分・血糖の管理、薬の継続、定期的な検査が大切です。経過は治療によって変わりますので、一緒に取り組んでいきましょう。</p>';
+  }
+  const n=new Date();
+  h+=`<p style="text-align:right">はら内科医院　${n.getFullYear()}年${n.getMonth()+1}月${n.getDate()}日</p>`;
+  el.innerHTML=h;
+  window.print();
+};
+
+document.getElementById('demoBtn').onclick=()=>{
+  let eg='',up='';
+  let v=72; const start=new Date(2016,0,15);
+  for(let i=0;i<60;i++){
+    const d=new Date(start); d.setMonth(d.getMonth()+i*2);
+    v-=(i<30?0.55:0.30)+(Math.random()-0.5)*1.2;
+    eg+=fmtD(d)+'\t'+v.toFixed(1)+'\n';
+    if(i%4===0) up+=fmtD(d)+'\t'+(Math.max(0.1,0.5+i*0.05+(Math.random()-0.5))).toFixed(1)+'\n';
+  }
+  document.getElementById('egfrInput').value=eg;
+  document.getElementById('upInput').value=up;
+  document.getElementById('dob').value='1954-05-01';
+  document.getElementById('plotBtn').click();
+};
+(function(){const n=new Date();document.getElementById('todayLabel').textContent=n.getFullYear()+'年'+(n.getMonth()+1)+'月'+n.getDate()+'日 現在';})();
+draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,3069 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>禁煙学クイズ</title>
+    <meta name="description" content="禁煙学改訂5版に基づく4択クイズアプリ。サクサク解いて効率よく学習。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+/* ===== リセット・基本設定 ===== */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --bg-primary: #0a0e1a;
+    --bg-secondary: #111827;
+    --bg-card: rgba(30, 41, 59, 0.7);
+    --bg-card-hover: rgba(51, 65, 85, 0.5);
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --accent-blue: #3b82f6;
+    --accent-blue-glow: rgba(59, 130, 246, 0.3);
+    --accent-green: #10b981;
+    --accent-green-glow: rgba(16, 185, 129, 0.3);
+    --accent-red: #ef4444;
+    --accent-red-glow: rgba(239, 68, 68, 0.3);
+    --accent-amber: #f59e0b;
+    --accent-purple: #8b5cf6;
+    --border-subtle: rgba(148, 163, 184, 0.12);
+    --border-active: rgba(59, 130, 246, 0.4);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3);
+    --shadow-glow-blue: 0 0 20px rgba(59, 130, 246, 0.15);
+    --shadow-glow-green: 0 0 20px rgba(16, 185, 129, 0.15);
+    --font-main: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.3s ease;
+}
+
+html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    font-family: var(--font-main);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100dvh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ===== 背景グラデーション ===== */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(ellipse at 20% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 100%, rgba(139, 92, 246, 0.06) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ===== 画面の切り替え ===== */
+.screen {
+    display: none;
+    position: relative;
+    z-index: 1;
+    min-height: 100dvh;
+    animation: fadeIn 0.3s ease;
+}
+
+.screen.active {
+    display: flex;
+    flex-direction: column;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== スタート画面 ===== */
+.start-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.5rem;
+    text-align: center;
+}
+
+.app-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+.start-container h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.3rem;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+}
+
+.start-stats {
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 2rem;
+    width: 100%;
+    max-width: 340px;
+    font-size: 0.9rem;
+    line-height: 1.8;
+    color: var(--text-secondary);
+}
+
+.start-stats .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.start-stats .stat-value {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.start-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 340px;
+}
+
+/* ===== ボタン ===== */
+.btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 1rem 1.5rem;
+    font-family: var(--font-main);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active {
+    transform: scale(0.97);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+    color: white;
+    box-shadow: var(--shadow-glow-blue);
+}
+
+.btn-primary:hover {
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
+}
+
+.btn-secondary {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border-subtle);
+}
+
+.btn-secondary:hover {
+    border-color: var(--border-active);
+    background: var(--bg-card-hover);
+}
+
+.btn-accent {
+    background: linear-gradient(135deg, var(--accent-green), #059669);
+    color: white;
+    box-shadow: var(--shadow-glow-green);
+}
+
+.btn-ghost {
+    background: transparent;
+    color: var(--text-muted);
+    font-weight: 500;
+    font-size: 0.85rem;
+    padding: 0.75rem;
+}
+
+.btn-ghost:hover {
+    color: var(--text-secondary);
+}
+
+.btn-icon {
+    font-size: 1.1rem;
+}
+
+/* ===== クイズ画面 ===== */
+.quiz-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(10, 14, 26, 0.9);
+    backdrop-filter: blur(12px);
+    padding: 1rem 1.25rem 0.75rem;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+#score-text {
+    color: var(--accent-green);
+    font-weight: 600;
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 4px;
+    background: rgba(148, 163, 184, 0.15);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+    border-radius: 2px;
+    transition: width var(--transition-normal);
+    width: 0%;
+}
+
+.quiz-body {
+    flex: 1;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* ===== 問題カード ===== */
+.question-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-card);
+}
+
+.question-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--accent-blue);
+    background: rgba(59, 130, 246, 0.12);
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.02em;
+}
+
+.question-text {
+    font-size: 1.05rem;
+    font-weight: 500;
+    line-height: 1.7;
+    color: var(--text-primary);
+}
+
+/* ===== 選択肢 ===== */
+.options-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.option-btn {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    width: 100%;
+    text-align: left;
+    background: var(--bg-card);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.2rem;
+    font-family: var(--font-main);
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    -webkit-tap-highlight-color: transparent;
+    line-height: 1.6;
+}
+
+.option-btn:active {
+    transform: scale(0.98);
+}
+
+.option-btn:hover:not(.answered) {
+    border-color: var(--border-active);
+    background: var(--bg-card-hover);
+}
+
+.option-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 50%;
+    background: rgba(148, 163, 184, 0.12);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    transition: all var(--transition-fast);
+}
+
+.option-text {
+    flex: 1;
+    padding-top: 0.15rem;
+}
+
+/* 正解・不正解のスタイル */
+.option-btn.correct {
+    background: rgba(16, 185, 129, 0.12);
+    border-color: var(--accent-green);
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.1);
+}
+
+.option-btn.correct .option-label {
+    background: var(--accent-green);
+    color: white;
+}
+
+.option-btn.wrong {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--accent-red);
+}
+
+.option-btn.wrong .option-label {
+    background: var(--accent-red);
+    color: white;
+}
+
+.option-btn.answered {
+    cursor: default;
+    pointer-events: none;
+}
+
+.option-btn.dimmed {
+    opacity: 0.45;
+}
+
+/* ===== 解説カード ===== */
+.explanation-card {
+    background: rgba(59, 130, 246, 0.06);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: var(--radius-md);
+    padding: 1.2rem;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.explanation-header {
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.explanation-header.correct-header {
+    color: var(--accent-green);
+}
+
+.explanation-header.wrong-header {
+    color: var(--accent-red);
+}
+
+.explanation-text {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: var(--text-secondary);
+}
+
+/* ===== クイズフッター ===== */
+.quiz-footer {
+    padding: 1rem 1.25rem;
+    display: flex;
+    gap: 0.75rem;
+    border-top: 1px solid var(--border-subtle);
+    background: rgba(10, 14, 26, 0.9);
+    backdrop-filter: blur(12px);
+}
+
+.btn-next {
+    flex: 1;
+}
+
+.btn-home {
+    padding: 1rem;
+}
+
+/* ===== 結果画面 ===== */
+.result-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.5rem;
+    text-align: center;
+}
+
+.result-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.result-container h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+}
+
+.result-score {
+    font-size: 3rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+}
+
+.result-details {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+    line-height: 1.8;
+}
+
+.result-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 340px;
+}
+
+/* ===== レスポンシブ ===== */
+@media (min-width: 600px) {
+    .quiz-body {
+        max-width: 560px;
+        margin: 0 auto;
+        width: 100%;
+    }
+    
+    .start-container,
+    .result-container {
+        max-width: 480px;
+        margin: 0 auto;
+    }
+}
+
+</style>
+</head>
+<body>
+    <!-- ===== スタート画面 ===== -->
+    <div id="screen-start" class="screen active">
+        <div class="start-container">
+            <div class="app-icon">🚭</div>
+            <h1>禁煙学クイズ</h1>
+            <p class="subtitle">改訂5版 対応</p>
+            <div class="start-stats" id="start-stats"></div>
+            <div class="start-buttons">
+                <button id="btn-start-all" class="btn btn-primary" onclick="startQuiz('all')">
+                    <span class="btn-icon">📝</span>
+                    全問チャレンジ
+                </button>
+                <button id="btn-start-wrong" class="btn btn-secondary" onclick="startQuiz('wrong')" style="display:none;">
+                    <span class="btn-icon">🔄</span>
+                    間違えた問題だけ
+                </button>
+                <button id="btn-resume" class="btn btn-accent" onclick="startQuiz('resume')" style="display:none;">
+                    <span class="btn-icon">▶️</span>
+                    前回の続きから
+                </button>
+                <button id="btn-reset" class="btn btn-ghost" onclick="resetProgress()" style="display:none;">
+                    <span class="btn-icon">🗑️</span>
+                    学習記録をリセット
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== クイズ画面 ===== -->
+    <div id="screen-quiz" class="screen">
+        <div class="quiz-header">
+            <div class="progress-info">
+                <span id="progress-text">1 / 12</span>
+                <span id="score-text">正解: 0</span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+        </div>
+
+        <div class="quiz-body">
+            <div class="question-card" id="question-card">
+                <div class="question-badge" id="question-badge">試験問題例</div>
+                <p class="question-text" id="question-text"></p>
+            </div>
+
+            <div class="options-container" id="options-container"></div>
+
+            <div class="explanation-card" id="explanation-card" style="display:none;">
+                <div class="explanation-header" id="explanation-header"></div>
+                <p class="explanation-text" id="explanation-text"></p>
+            </div>
+        </div>
+
+        <div class="quiz-footer">
+            <button class="btn btn-primary btn-next" id="btn-next" onclick="nextQuestion()" style="display:none;">
+                次の問題へ →
+            </button>
+            <button class="btn btn-ghost btn-home" id="btn-home" onclick="goHome()">
+                ホームに戻る
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== 結果画面 ===== -->
+    <div id="screen-result" class="screen">
+        <div class="result-container">
+            <div class="result-icon" id="result-icon">🎉</div>
+            <h2 id="result-title">お疲れ様でした！</h2>
+            <div class="result-score" id="result-score"></div>
+            <div class="result-details" id="result-details"></div>
+            <div class="result-buttons">
+                <button class="btn btn-primary" onclick="startQuiz('wrong')">
+                    <span class="btn-icon">🔄</span>
+                    間違えた問題を復習
+                </button>
+                <button class="btn btn-secondary" onclick="startQuiz('all')">
+                    <span class="btn-icon">📝</span>
+                    もう一度最初から
+                </button>
+                <button class="btn btn-ghost" onclick="goHome()">
+                    ホームに戻る
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+/**
+ * 禁煙学クイズ アプリケーション
+ * - 全問チャレンジ / 間違えた問題のみ / 前回の続きから の3モード
+ * - LocalStorageによる進捗保存
+ */
+
+// ===== 状態管理 =====
+let allQuestions = [];
+let currentQuestions = [];
+let currentIndex = 0;
+let correctCount = 0;
+let wrongIds = [];
+let answered = false;
+let quizMode = 'all';
+
+const STORAGE_KEY = 'kinen_quiz_state';
+
+// ===== 初期化 =====
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadQuestions();
+    updateStartScreen();
+});
+
+async function loadQuestions() {
+    allQuestions = [
+  {
+    "id": "c1_01",
+    "chapter": "第1章 喫煙の医学",
+    "type": "check",
+    "question": "タバコ煙に含まれる化学物質の種類数として正しいものはどれか。",
+    "options": [
+      "約100種類",
+      "約1,000種類",
+      "約5,300種類",
+      "約50,000種類"
+    ],
+    "answer": 2,
+    "explanation": "主流煙の粒子成分が約4,300種類、ガス成分が約1,000種類の合計約5,300種類とされています。"
+  },
+  {
+    "id": "c1_02",
+    "chapter": "第1章 喫煙の医学",
+    "type": "check",
+    "question": "タバコの3つの特性として正しい組み合わせはどれか。",
+    "options": [
+      "依存性・有害性・魅惑性",
+      "依存性・発がん性・中毒性",
+      "有害性・魅惑性・致死性",
+      "中毒性・発がん性・魅惑性"
+    ],
+    "answer": 0,
+    "explanation": "タバコは依存性(addictiveness)、有害性(toxicity)、魅惑性(attractiveness)の3つの特性を有しています。"
+  },
+  {
+    "id": "c1_03",
+    "chapter": "第1章 喫煙の医学",
+    "type": "general",
+    "question": "ニコチン依存のメカニズムとして正しいものはどれか。",
+    "options": [
+      "ニコチンがセロトニン受容体に結合する",
+      "ニコチンがα4β2受容体に結合しドパミンが放出される",
+      "ニコチンがGABA受容体を遮断する",
+      "ニコチンがアドレナリン受容体に結合する"
+    ],
+    "answer": 1,
+    "explanation": "ニコチンが脳内のα4β2ニコチン受容体に結合するとドパミンが放出され快感が生じ、これが依存の主要なメカニズムです。"
+  },
+  {
+    "id": "c1_04",
+    "chapter": "第1章 喫煙の医学",
+    "type": "general",
+    "question": "タバコ煙の代表的な有害物質でないものはどれか。",
+    "options": [
+      "一酸化炭素",
+      "ベンゼン",
+      "カフェイン",
+      "ホルムアルデヒド"
+    ],
+    "answer": 2,
+    "explanation": "代表的な有害物質にはニコチン、一酸化炭素、ベンゼン、ホルムアルデヒド、タバコ特異的ニトロソアミンなどがあります。カフェインは含まれません。"
+  },
+  {
+    "id": "c1_05",
+    "chapter": "第1章 喫煙の医学",
+    "type": "general",
+    "question": "タバコの主流煙と副流煙について正しいものはどれか。",
+    "options": [
+      "主流煙は喫煙者が吸い込む煙である",
+      "副流煙は喫煙者が吐き出す煙のみを指す",
+      "主流煙のほうが副流煙より有害物質濃度が高い",
+      "副流煙にはニコチンが含まれない"
+    ],
+    "answer": 0,
+    "explanation": "主流煙は喫煙者が直接吸い込む煙で、副流煙はタバコの先端から立ち上がる煙です。副流煙には主流煙より高濃度の有害物質が含まれます。"
+  },
+  {
+    "id": "c1_06",
+    "chapter": "第1章 喫煙の医学",
+    "type": "general",
+    "question": "ニコチンの血中半減期として正しいものはどれか。",
+    "options": [
+      "約10分",
+      "約2時間",
+      "約12時間",
+      "約24時間"
+    ],
+    "answer": 1,
+    "explanation": "ニコチンの血中半減期は約2時間です。このため喫煙者は定期的にタバコを吸いたくなります。"
+  },
+  {
+    "id": "c1_07",
+    "chapter": "第1章 喫煙の医学",
+    "type": "general",
+    "question": "タバコ特異的ニトロソアミン(TSNA)について正しいものはどれか。",
+    "options": [
+      "タバコ煙にのみ含まれる発がん物質である",
+      "食品にも広く含まれる物質である",
+      "無害な物質である",
+      "タバコの香りの元となる物質である"
+    ],
+    "answer": 0,
+    "explanation": "タバコ特異的ニトロソアミン(TSNA)はタバコ煙に特有の発がん物質で、NNKやNNNなどが代表的です。"
+  },
+  {
+    "id": "c1_08",
+    "chapter": "第1章 喫煙の医学",
+    "type": "general",
+    "question": "喫煙による一酸化炭素(CO)の影響として正しいものはどれか。",
+    "options": [
+      "COはヘモグロビンとの結合力が酸素の200倍以上である",
+      "COは体内で速やかに分解される",
+      "COは肺にのみ影響する",
+      "COの半減期は約24時間である"
+    ],
+    "answer": 0,
+    "explanation": "一酸化炭素はヘモグロビンとの結合力が酸素の約200〜250倍あり、組織への酸素供給を阻害します。"
+  },
+  {
+    "id": "c1_09",
+    "chapter": "第1章 喫煙の医学",
+    "type": "general",
+    "question": "ニコチン依存症について正しいものはどれか。",
+    "options": [
+      "身体的依存のみからなる",
+      "心理的依存のみからなる",
+      "身体的依存と心理的依存の両方からなる",
+      "依存性はない"
+    ],
+    "answer": 2,
+    "explanation": "ニコチン依存症は、ニコチンによる身体的依存（離脱症状）と、喫煙行動に伴う心理的依存の両方からなります。"
+  },
+  {
+    "id": "c1_10",
+    "chapter": "第1章 喫煙の医学",
+    "type": "general",
+    "question": "加熱式タバコについて正しいものはどれか。",
+    "options": [
+      "有害物質を全く含まない",
+      "紙巻タバコと同様の有害物質が含まれる可能性がある",
+      "ニコチンを含まない",
+      "受動喫煙の影響はない"
+    ],
+    "answer": 1,
+    "explanation": "加熱式タバコにも紙巻タバコと同様の有害物質が含まれる可能性があり、安全とは言えません。"
+  },
+  {
+    "id": "c1_11",
+    "chapter": "第1章 喫煙の医学",
+    "type": "general",
+    "question": "タバコに添加物が使用される主な理由として正しいものはどれか。",
+    "options": [
+      "有害物質を除去するため",
+      "依存性を高め、味や香りを与えるため",
+      "煙の量を減らすため",
+      "発がん物質を中和するため"
+    ],
+    "answer": 1,
+    "explanation": "タバコには依存性を高める、味や香りを与えるなどの目的で多数の添加物が使用されています。"
+  },
+  {
+    "id": "c1_12",
+    "chapter": "第1章 喫煙の医学",
+    "type": "general",
+    "question": "ニコチンの離脱症状に含まれないものはどれか。",
+    "options": [
+      "イライラ・不安",
+      "集中困難",
+      "食欲増加",
+      "発熱"
+    ],
+    "answer": 3,
+    "explanation": "ニコチンの離脱症状には、イライラ、不安、集中困難、食欲増加、不眠などがありますが、発熱は通常含まれません。"
+  },
+  {
+    "id": "c1_13",
+    "chapter": "第1章 喫煙の医学",
+    "type": "general",
+    "question": "Fagerström ニコチン依存度テスト(FTND)の質問項目に含まれるものはどれか。",
+    "options": [
+      "朝、目覚めてから何分以内に最初のタバコを吸うか",
+      "タバコにいくら費やしているか",
+      "いつから喫煙を始めたか",
+      "家族に喫煙者がいるか"
+    ],
+    "answer": 0,
+    "explanation": "FTNDの重要な質問の一つに「朝、目覚めてから何分以内に最初のタバコを吸いますか」があり、5分以内は依存度が高いとされます。"
+  },
+  {
+    "id": "c1_14",
+    "chapter": "第1章 喫煙の医学",
+    "type": "general",
+    "question": "ブリンクマン指数の計算方法として正しいものはどれか。",
+    "options": [
+      "1日の喫煙本数×喫煙年数",
+      "1日の喫煙本数÷喫煙年数",
+      "喫煙年数×体重",
+      "1日の喫煙本数×年齢"
+    ],
+    "answer": 0,
+    "explanation": "ブリンクマン指数は「1日の喫煙本数×喫煙年数」で計算され、400以上で肺がんリスクが高まるとされます。"
+  },
+  {
+    "id": "c1_15",
+    "chapter": "第1章 喫煙の医学",
+    "type": "general",
+    "question": "ブリンクマン指数がいくつ以上で肺がんのリスクが高まるとされるか。",
+    "options": [
+      "100以上",
+      "200以上",
+      "400以上",
+      "1000以上"
+    ],
+    "answer": 2,
+    "explanation": "ブリンクマン指数が400以上で肺がんのリスクが高まり、600以上で肺がんの高危険群とされます。"
+  },
+  {
+    "id": "c2_01",
+    "chapter": "第2章 能動喫煙による疾患",
+    "type": "check",
+    "question": "喫煙と因果関係が確立している疾患として正しいものはどれか。",
+    "options": [
+      "肺がん",
+      "花粉症",
+      "骨粗鬆症のみ",
+      "痛風のみ"
+    ],
+    "answer": 0,
+    "explanation": "喫煙と肺がんの因果関係は最も確実に確立されています。"
+  },
+  {
+    "id": "c2_02",
+    "chapter": "第2章 能動喫煙による疾患",
+    "type": "check",
+    "question": "喫煙により発症リスクが上昇するがんとして正しくないものはどれか。",
+    "options": [
+      "肺がん",
+      "喉頭がん",
+      "食道がん",
+      "前立腺がん"
+    ],
+    "answer": 3,
+    "explanation": "喫煙は肺がん、喉頭がん、食道がん、膀胱がん、胃がんなど多くのがんのリスクを上昇させますが、前立腺がんとの因果関係は確立されていません。"
+  },
+  {
+    "id": "c2_03",
+    "chapter": "第2章 能動喫煙による疾患",
+    "type": "general",
+    "question": "COPD（慢性閉塞性肺疾患）と喫煙の関係について正しいものはどれか。",
+    "options": [
+      "COPDの原因の約90%は喫煙である",
+      "喫煙とCOPDに関連はない",
+      "COPDは禁煙しても改善しない",
+      "COPDは若年者には発症しない"
+    ],
+    "answer": 0,
+    "explanation": "COPDの原因の約90%は喫煙によるものです。禁煙により進行を遅らせることができます。"
+  },
+  {
+    "id": "c2_04",
+    "chapter": "第2章 能動喫煙による疾患",
+    "type": "general",
+    "question": "喫煙と虚血性心疾患について正しいものはどれか。",
+    "options": [
+      "喫煙は心筋梗塞のリスクを下げる",
+      "喫煙は心筋梗塞のリスクを約3倍にする",
+      "喫煙は心筋梗塞と無関係である",
+      "禁煙しても心筋梗塞リスクは変わらない"
+    ],
+    "answer": 1,
+    "explanation": "INTER-HEART試験で喫煙による心筋梗塞リスクは3.0倍であり、糖尿病と同等、高血圧や肥満より高値と報告されています。"
+  },
+  {
+    "id": "c2_05",
+    "chapter": "第2章 能動喫煙による疾患",
+    "type": "general",
+    "question": "喫煙と脳卒中の関係について正しいものはどれか。",
+    "options": [
+      "喫煙は脳卒中のリスクを増加させる",
+      "喫煙は脳卒中を予防する",
+      "喫煙と脳卒中に関連はない",
+      "禁煙しても脳卒中リスクは低下しない"
+    ],
+    "answer": 0,
+    "explanation": "喫煙は脳卒中（脳梗塞・脳出血・くも膜下出血）のリスクを増加させます。禁煙によりリスクは低下します。"
+  },
+  {
+    "id": "c2_06",
+    "chapter": "第2章 能動喫煙による疾患",
+    "type": "general",
+    "question": "喫煙と消化器疾患の関連について正しいものはどれか。",
+    "options": [
+      "喫煙は胃潰瘍のリスクを増加させる",
+      "喫煙は胃酸分泌を減少させる",
+      "喫煙は消化管には影響しない",
+      "喫煙は大腸がんのリスクを下げる"
+    ],
+    "answer": 0,
+    "explanation": "喫煙は胃潰瘍・十二指腸潰瘍のリスクを増加させ、胃がんのリスクも上昇させます。"
+  },
+  {
+    "id": "c2_07",
+    "chapter": "第2章 能動喫煙による疾患",
+    "type": "general",
+    "question": "喫煙と糖尿病の関係について正しいものはどれか。",
+    "options": [
+      "喫煙は2型糖尿病のリスクを上昇させる",
+      "喫煙は血糖値を下げる",
+      "喫煙は糖尿病と無関係である",
+      "喫煙はインスリン感受性を高める"
+    ],
+    "answer": 0,
+    "explanation": "喫煙は2型糖尿病の発症リスクを上昇させ、インスリン抵抗性を増大させます。"
+  },
+  {
+    "id": "c2_08",
+    "chapter": "第2章 能動喫煙による疾患",
+    "type": "general",
+    "question": "喫煙と歯周病の関係について正しいものはどれか。",
+    "options": [
+      "喫煙は歯周病のリスクを増加させる",
+      "喫煙は歯周病を予防する",
+      "喫煙と歯周病に関連はない",
+      "喫煙者の歯周病は非喫煙者より軽症である"
+    ],
+    "answer": 0,
+    "explanation": "喫煙は歯周病の重要なリスク因子であり、喫煙者は非喫煙者に比べ歯周病にかかりやすく重症化しやすいです。"
+  },
+  {
+    "id": "c2_09",
+    "chapter": "第2章 能動喫煙による疾患",
+    "type": "general",
+    "question": "喫煙と膀胱がんの関係について正しいものはどれか。",
+    "options": [
+      "喫煙は膀胱がんのリスクを約2〜4倍に増加させる",
+      "喫煙と膀胱がんに関連はない",
+      "膀胱がんは女性喫煙者のみに増加する",
+      "禁煙しても膀胱がんリスクは低下しない"
+    ],
+    "answer": 0,
+    "explanation": "喫煙は膀胱がんの主要なリスク因子であり、喫煙者のリスクは非喫煙者の約2〜4倍です。"
+  },
+  {
+    "id": "c2_10",
+    "chapter": "第2章 能動喫煙による疾患",
+    "type": "general",
+    "question": "喫煙と関節リウマチの関係について正しいものはどれか。",
+    "options": [
+      "喫煙は関節リウマチのリスクを上昇させる",
+      "喫煙は関節リウマチを改善する",
+      "喫煙と関節リウマチに関連はない",
+      "喫煙は関節の可動域を広げる"
+    ],
+    "answer": 0,
+    "explanation": "喫煙は関節リウマチの発症リスクを上昇させることが知られています。"
+  },
+  {
+    "id": "c2_11",
+    "chapter": "第2章 能動喫煙による疾患",
+    "type": "general",
+    "question": "喫煙と白内障の関係について正しいものはどれか。",
+    "options": [
+      "喫煙は白内障のリスクを上昇させる",
+      "喫煙は視力を改善する",
+      "喫煙と白内障に関連はない",
+      "喫煙は緑内障のみに影響する"
+    ],
+    "answer": 0,
+    "explanation": "喫煙は白内障（特に核白内障）のリスクを上昇させることが知られています。"
+  },
+  {
+    "id": "c2_12",
+    "chapter": "第2章 能動喫煙による疾患",
+    "type": "general",
+    "question": "喫煙と加齢黄斑変性の関係について正しいものはどれか。",
+    "options": [
+      "喫煙は加齢黄斑変性のリスクを上昇させる",
+      "喫煙は網膜を保護する",
+      "関連はない",
+      "禁煙してもリスクは変わらない"
+    ],
+    "answer": 0,
+    "explanation": "喫煙は加齢黄斑変性の重要なリスク因子です。禁煙によりリスクは低下します。"
+  },
+  {
+    "id": "c2_13",
+    "chapter": "第2章 能動喫煙による疾患",
+    "type": "general",
+    "question": "喫煙と大動脈瘤の関係について正しいものはどれか。",
+    "options": [
+      "喫煙は腹部大動脈瘤のリスクを著しく上昇させる",
+      "喫煙と大動脈瘤に関連はない",
+      "禁煙は大動脈瘤のリスクに影響しない",
+      "大動脈瘤は非喫煙者にのみ発症する"
+    ],
+    "answer": 0,
+    "explanation": "喫煙は腹部大動脈瘤の最大のリスク因子の一つであり、リスクを著しく上昇させます。"
+  },
+  {
+    "id": "c2_14",
+    "chapter": "第2章 能動喫煙による疾患",
+    "type": "general",
+    "question": "喫煙と閉塞性動脈硬化症(ASO)の関係について正しいものはどれか。",
+    "options": [
+      "喫煙はASOの最大のリスク因子である",
+      "喫煙とASOに関連はない",
+      "ASOは上肢にのみ発症する",
+      "禁煙してもASOは改善しない"
+    ],
+    "answer": 0,
+    "explanation": "喫煙は閉塞性動脈硬化症(ASO)の最大のリスク因子であり、主に下肢動脈に動脈硬化を引き起こします。"
+  },
+  {
+    "id": "c2_15",
+    "chapter": "第2章 能動喫煙による疾患",
+    "type": "general",
+    "question": "喫煙と子宮頸がんの関係について正しいものはどれか。",
+    "options": [
+      "喫煙は子宮頸がんのリスクを上昇させる",
+      "喫煙は子宮頸がんを予防する",
+      "喫煙と子宮頸がんに関連はない",
+      "子宮頸がんはウイルスのみが原因である"
+    ],
+    "answer": 0,
+    "explanation": "喫煙は子宮頸がんのリスクを上昇させます。HPV感染に加え喫煙が発症リスクを高めます。"
+  },
+  {
+    "id": "c2_16",
+    "chapter": "第2章 能動喫煙による疾患",
+    "type": "general",
+    "question": "喫煙による肺がんのリスクについて正しいものはどれか。",
+    "options": [
+      "喫煙者の肺がんリスクは非喫煙者の約4〜5倍以上である",
+      "喫煙と肺がんの関連性は弱い",
+      "軽い喫煙なら肺がんリスクは上昇しない",
+      "女性は喫煙しても肺がんリスクは変わらない"
+    ],
+    "answer": 0,
+    "explanation": "喫煙者の肺がんリスクは非喫煙者と比較して男性で約4.5倍、女性で約4.2倍とされています。"
+  },
+  {
+    "id": "c2_17",
+    "chapter": "第2章 能動喫煙による疾患",
+    "type": "general",
+    "question": "喫煙と喉頭がんの関係について正しいものはどれか。",
+    "options": [
+      "喫煙は喉頭がんと最も強い因果関係がある",
+      "喫煙と喉頭がんに関連はない",
+      "喉頭がんは飲酒のみが原因である",
+      "禁煙しても喉頭がんリスクは下がらない"
+    ],
+    "answer": 0,
+    "explanation": "喉頭がんは喫煙との因果関係が最も強いがんの一つです。喫煙と飲酒の相乗効果でリスクはさらに上昇します。"
+  },
+  {
+    "id": "c2_18",
+    "chapter": "第2章 能動喫煙による疾患",
+    "type": "general",
+    "question": "喫煙と妊娠の関係について正しいものはどれか。",
+    "options": [
+      "喫煙は低出生体重児のリスクを上昇させる",
+      "喫煙は妊娠には影響しない",
+      "妊娠後期の喫煙のみが問題となる",
+      "喫煙は早産のリスクを下げる"
+    ],
+    "answer": 0,
+    "explanation": "喫煙は低出生体重児、早産、常位胎盤早期剥離などのリスクを上昇させます。"
+  },
+  {
+    "id": "c2_19",
+    "chapter": "第2章 能動喫煙による疾患",
+    "type": "general",
+    "question": "禁煙後の心筋梗塞リスクの変化について正しいものはどれか。",
+    "options": [
+      "禁煙後1〜2年で非喫煙者に近いレベルまで低下する",
+      "禁煙してもリスクは変わらない",
+      "禁煙後10年経たないとリスクは下がらない",
+      "禁煙直後にリスクが一時的に上昇する"
+    ],
+    "answer": 0,
+    "explanation": "心筋梗塞リスクは禁煙後比較的早期に低下し、1〜2年で非喫煙者に近いレベルまで低下するとされています。"
+  },
+  {
+    "id": "c2_20",
+    "chapter": "第2章 能動喫煙による疾患",
+    "type": "general",
+    "question": "禁煙後の肺がんリスクの変化について正しいものはどれか。",
+    "options": [
+      "禁煙後10〜15年で非喫煙者に近づく",
+      "禁煙しても肺がんリスクは下がらない",
+      "禁煙後1年で非喫煙者と同じになる",
+      "禁煙後リスクは一時的に上昇する"
+    ],
+    "answer": 0,
+    "explanation": "肺がんリスクは禁煙後徐々に低下し、10〜15年で非喫煙者に近いレベルまで低下します。"
+  },
+  {
+    "id": "c3_01",
+    "chapter": "第3章 受動喫煙",
+    "type": "check",
+    "question": "受動喫煙による死亡数（日本国内）として推計されている年間人数はどれか。",
+    "options": [
+      "約1,500人",
+      "約15,000人",
+      "約50,000人",
+      "約100,000人"
+    ],
+    "answer": 1,
+    "explanation": "日本では受動喫煙による死亡者数は年間約15,000人と推計されています。"
+  },
+  {
+    "id": "c3_02",
+    "chapter": "第3章 受動喫煙",
+    "type": "check",
+    "question": "受動喫煙と因果関係が確立している疾患はどれか。",
+    "options": [
+      "肺がん・虚血性心疾患",
+      "花粉症・痛風",
+      "骨粗鬆症のみ",
+      "高血圧のみ"
+    ],
+    "answer": 0,
+    "explanation": "受動喫煙と肺がん、虚血性心疾患の因果関係は確実に確立されています。"
+  },
+  {
+    "id": "c3_03",
+    "chapter": "第3章 受動喫煙",
+    "type": "general",
+    "question": "受動喫煙と小児の疾患について正しいものはどれか。",
+    "options": [
+      "受動喫煙は小児の気管支喘息のリスクを上昇させる",
+      "受動喫煙は小児の健康に影響しない",
+      "受動喫煙は小児の身長の伸びを促進する",
+      "受動喫煙は小児の免疫力を高める"
+    ],
+    "answer": 0,
+    "explanation": "受動喫煙は小児の気管支喘息、中耳炎、呼吸器感染症などのリスクを上昇させます。"
+  },
+  {
+    "id": "c3_04",
+    "chapter": "第3章 受動喫煙",
+    "type": "general",
+    "question": "受動喫煙と乳幼児突然死症候群(SIDS)の関係について正しいものはどれか。",
+    "options": [
+      "受動喫煙はSIDSのリスクを上昇させる",
+      "受動喫煙とSIDSに関連はない",
+      "SIDSは遺伝性疾患のみである",
+      "受動喫煙はSIDSを予防する"
+    ],
+    "answer": 0,
+    "explanation": "受動喫煙はSIDSのリスクを上昇させる重要な因子の一つです。"
+  },
+  {
+    "id": "c3_05",
+    "chapter": "第3章 受動喫煙",
+    "type": "general",
+    "question": "受動喫煙による脳卒中死の増加率として報告されているものはどれか。",
+    "options": [
+      "5%",
+      "15%",
+      "29%",
+      "50%"
+    ],
+    "answer": 2,
+    "explanation": "受動喫煙がある場合、脳卒中死は29%増加すると報告されています。"
+  },
+  {
+    "id": "c3_06",
+    "chapter": "第3章 受動喫煙",
+    "type": "general",
+    "question": "受動喫煙による総死亡の増加率として報告されているものはどれか。",
+    "options": [
+      "5%",
+      "18%",
+      "35%",
+      "50%"
+    ],
+    "answer": 1,
+    "explanation": "受動喫煙がある場合、総死亡は18%増加すると報告されています。"
+  },
+  {
+    "id": "c3_07",
+    "chapter": "第3章 受動喫煙",
+    "type": "general",
+    "question": "副流煙について正しいものはどれか。",
+    "options": [
+      "副流煙は主流煙より有害物質の濃度が高い",
+      "副流煙は無害である",
+      "副流煙はフィルターを通過した煙である",
+      "副流煙の有害物質濃度は主流煙より低い"
+    ],
+    "answer": 0,
+    "explanation": "副流煙にはフィルターを通過しない分、主流煙より高い濃度の有害物質が含まれています。"
+  },
+  {
+    "id": "c3_08",
+    "chapter": "第3章 受動喫煙",
+    "type": "general",
+    "question": "サードハンドスモーク（三次喫煙）とは何か。",
+    "options": [
+      "3本目以降のタバコの煙",
+      "壁や衣類に残留した有害物質への曝露",
+      "3人以上の受動喫煙",
+      "屋外での喫煙"
+    ],
+    "answer": 1,
+    "explanation": "サードハンドスモークとは、喫煙後に壁、カーテン、衣類などに残留した有害物質への曝露のことです。"
+  },
+  {
+    "id": "c3_09",
+    "chapter": "第3章 受動喫煙",
+    "type": "general",
+    "question": "受動喫煙と冠動脈疾患死の増加率はどれか。",
+    "options": [
+      "5%",
+      "10%",
+      "23%",
+      "40%"
+    ],
+    "answer": 2,
+    "explanation": "受動喫煙がある場合、冠動脈疾患死は23%増加すると報告されています。"
+  },
+  {
+    "id": "c3_10",
+    "chapter": "第3章 受動喫煙",
+    "type": "general",
+    "question": "受動喫煙と全がん死の増加率はどれか。",
+    "options": [
+      "5%",
+      "16%",
+      "30%",
+      "45%"
+    ],
+    "answer": 1,
+    "explanation": "受動喫煙がある場合、全がん死が16%増加すると報告されています。"
+  },
+  {
+    "id": "c3_11",
+    "chapter": "第3章 受動喫煙",
+    "type": "general",
+    "question": "受動喫煙の評価指標として用いられるものはどれか。",
+    "options": [
+      "尿中コチニン濃度",
+      "血中ブドウ糖",
+      "尿中クレアチニン",
+      "血中コレステロール"
+    ],
+    "answer": 0,
+    "explanation": "尿中コチニン濃度は受動喫煙の曝露を客観的に評価する指標として用いられます。"
+  },
+  {
+    "id": "c3_12",
+    "chapter": "第3章 受動喫煙",
+    "type": "general",
+    "question": "家庭内での受動喫煙対策として最も効果的なものはどれか。",
+    "options": [
+      "換気扇の下で喫煙する",
+      "ベランダで喫煙する",
+      "空気清浄機を使用する",
+      "完全禁煙にする"
+    ],
+    "answer": 3,
+    "explanation": "分煙や換気では受動喫煙を完全に防ぐことはできず、完全禁煙が最も効果的です。"
+  },
+  {
+    "id": "c3_13",
+    "chapter": "第3章 受動喫煙",
+    "type": "general",
+    "question": "受動喫煙による肺がんリスクの上昇率として正しいものはどれか。",
+    "options": [
+      "約10〜30%上昇",
+      "約2〜3倍に上昇",
+      "約10倍に上昇",
+      "上昇しない"
+    ],
+    "answer": 0,
+    "explanation": "受動喫煙による肺がんリスクは約20〜30%上昇するとされています。"
+  },
+  {
+    "id": "c3_14",
+    "chapter": "第3章 受動喫煙",
+    "type": "general",
+    "question": "受動喫煙防止法（改正健康増進法）について正しいものはどれか。",
+    "options": [
+      "2020年4月に全面施行された",
+      "罰則規定はない",
+      "努力義務のみである",
+      "飲食店は対象外である"
+    ],
+    "answer": 0,
+    "explanation": "改正健康増進法は2020年4月に全面施行され、多くの施設で屋内禁煙が義務化されました。"
+  },
+  {
+    "id": "c3_15",
+    "chapter": "第3章 受動喫煙",
+    "type": "general",
+    "question": "WHO FCTCとは何か。",
+    "options": [
+      "たばこの規制に関する世界保健機関枠組条約",
+      "世界禁煙デー",
+      "喫煙率調査",
+      "タバコ税の国際協定"
+    ],
+    "answer": 0,
+    "explanation": "WHO FCTC（Framework Convention on Tobacco Control）はたばこの規制に関する世界保健機関枠組条約です。"
+  },
+  {
+    "id": "c4_01",
+    "chapter": "第4章 禁煙の医学",
+    "type": "check",
+    "question": "禁煙の健康面でのメリットとして正しいものはどれか。",
+    "options": [
+      "禁煙後20分で心拍数と血圧が下がり始める",
+      "禁煙のメリットは1年後にようやく現れる",
+      "禁煙しても健康への効果はない",
+      "禁煙のメリットは若年者のみに限られる"
+    ],
+    "answer": 0,
+    "explanation": "禁煙後20分で心拍数と血圧が下がり始め、12時間で血中CO濃度が正常化するなど、早期から効果が現れます。"
+  },
+  {
+    "id": "c4_02",
+    "chapter": "第4章 禁煙の医学",
+    "type": "check",
+    "question": "禁煙後12時間で起こる変化として正しいものはどれか。",
+    "options": [
+      "肺がんリスクが半減する",
+      "血中の一酸化炭素濃度が正常化する",
+      "体重が減少する",
+      "ニコチンが完全に排出される"
+    ],
+    "answer": 1,
+    "explanation": "禁煙後12時間で血中の一酸化炭素濃度が正常化します。"
+  },
+  {
+    "id": "c4_03",
+    "chapter": "第4章 禁煙の医学",
+    "type": "general",
+    "question": "禁煙後2〜12週で起こる変化として正しいものはどれか。",
+    "options": [
+      "血液循環が改善し肺機能が高まる",
+      "肺がんリスクが消失する",
+      "すべての離脱症状が消失する",
+      "体重が必ず減少する"
+    ],
+    "answer": 0,
+    "explanation": "禁煙後2〜12週で血液循環が改善し、肺機能が高まります。"
+  },
+  {
+    "id": "c4_04",
+    "chapter": "第4章 禁煙の医学",
+    "type": "general",
+    "question": "禁煙と体重増加について正しいものはどれか。",
+    "options": [
+      "禁煙後平均2〜4kgの体重増加が見られることが多い",
+      "禁煙しても体重は変わらない",
+      "禁煙後必ず10kg以上太る",
+      "体重増加の健康リスクは喫煙継続より大きい"
+    ],
+    "answer": 0,
+    "explanation": "禁煙後は平均2〜4kgの体重増加が見られますが、その健康リスクは喫煙継続のリスクよりはるかに小さいです。"
+  },
+  {
+    "id": "c4_05",
+    "chapter": "第4章 禁煙の医学",
+    "type": "general",
+    "question": "禁煙後1年で起こる変化として正しいものはどれか。",
+    "options": [
+      "冠動脈疾患のリスクが喫煙者の約半分に低下する",
+      "すべてのがんリスクが消失する",
+      "肺機能が完全に正常化する",
+      "ニコチン依存が完全に消失する"
+    ],
+    "answer": 0,
+    "explanation": "禁煙後1年で冠動脈疾患の過剰リスクが喫煙者の約半分に低下します。"
+  },
+  {
+    "id": "c4_06",
+    "chapter": "第4章 禁煙の医学",
+    "type": "general",
+    "question": "禁煙後5年で起こる変化として正しいものはどれか。",
+    "options": [
+      "脳卒中リスクが非喫煙者と同等になる",
+      "すべての疾患リスクが消失する",
+      "肺がんリスクが消失する",
+      "体重が元に戻る"
+    ],
+    "answer": 0,
+    "explanation": "禁煙後5〜15年で脳卒中リスクが非喫煙者と同等のレベルまで低下します。"
+  },
+  {
+    "id": "c4_07",
+    "chapter": "第4章 禁煙の医学",
+    "type": "general",
+    "question": "禁煙によるメンタルヘルスへの影響として正しいものはどれか。",
+    "options": [
+      "禁煙は不安やうつ症状を長期的に改善する",
+      "禁煙は必ずうつ病を悪化させる",
+      "禁煙はメンタルヘルスに影響しない",
+      "禁煙はストレスを増加させ続ける"
+    ],
+    "answer": 0,
+    "explanation": "禁煙は長期的にはメンタルヘルスを改善し、不安やうつ症状、ストレスの軽減につながることが研究で示されています。"
+  },
+  {
+    "id": "c4_08",
+    "chapter": "第4章 禁煙の医学",
+    "type": "general",
+    "question": "何歳で禁煙しても余命延長効果があるか。",
+    "options": [
+      "何歳でも禁煙すれば余命延長効果がある",
+      "40歳未満でないと効果がない",
+      "30歳未満でないと効果がない",
+      "60歳以上では効果がない"
+    ],
+    "answer": 0,
+    "explanation": "何歳で禁煙しても余命延長効果があり、早ければ早いほどその効果は大きくなります。"
+  },
+  {
+    "id": "c4_09",
+    "chapter": "第4章 禁煙の医学",
+    "type": "general",
+    "question": "30歳までに禁煙した場合の余命への影響として正しいものはどれか。",
+    "options": [
+      "喫煙による余命短縮をほぼ回避できる",
+      "効果は限定的である",
+      "余命への影響はない",
+      "20歳までに禁煙しないと効果がない"
+    ],
+    "answer": 0,
+    "explanation": "30歳までに禁煙すれば、喫煙による余命の短縮をほぼ完全に回避できるとされています。"
+  },
+  {
+    "id": "c4_10",
+    "chapter": "第4章 禁煙の医学",
+    "type": "general",
+    "question": "禁煙と手術の関係について正しいものはどれか。",
+    "options": [
+      "術前禁煙により術後合併症リスクが低下する",
+      "禁煙は手術には影響しない",
+      "術直前の禁煙は逆効果である",
+      "全身麻酔の場合のみ禁煙が必要である"
+    ],
+    "answer": 0,
+    "explanation": "術前の禁煙により、創傷治癒の改善、呼吸器合併症の減少など術後合併症リスクが低下します。"
+  },
+  {
+    "id": "c4_11",
+    "chapter": "第4章 禁煙の医学",
+    "type": "general",
+    "question": "禁煙と皮膚の関係について正しいものはどれか。",
+    "options": [
+      "禁煙により肌の状態が改善する",
+      "喫煙は皮膚に影響しない",
+      "禁煙しても皮膚は改善しない",
+      "喫煙は肌を若返らせる"
+    ],
+    "answer": 0,
+    "explanation": "喫煙は皮膚の老化を促進し、禁煙により肌の血流が改善され、肌の状態が回復に向かいます。"
+  },
+  {
+    "id": "c4_12",
+    "chapter": "第4章 禁煙の医学",
+    "type": "general",
+    "question": "禁煙と味覚・嗅覚の関係について正しいものはどれか。",
+    "options": [
+      "禁煙後48時間で味覚・嗅覚が改善し始める",
+      "禁煙しても味覚は変わらない",
+      "味覚の改善には1年以上かかる",
+      "喫煙は味覚に影響しない"
+    ],
+    "answer": 0,
+    "explanation": "禁煙後48時間程度で味覚・嗅覚が改善し始め、食事がより美味しく感じられるようになります。"
+  },
+  {
+    "id": "c4_13",
+    "chapter": "第4章 禁煙の医学",
+    "type": "general",
+    "question": "禁煙と生殖機能の関係について正しいものはどれか。",
+    "options": [
+      "喫煙は男女ともに不妊のリスクを上昇させる",
+      "喫煙は生殖機能に影響しない",
+      "男性のみに影響する",
+      "女性のみに影響する"
+    ],
+    "answer": 0,
+    "explanation": "喫煙は男性では精子の質の低下、女性では卵巣機能の低下や不妊のリスク上昇に関連しています。"
+  },
+  {
+    "id": "c4_14",
+    "chapter": "第4章 禁煙の医学",
+    "type": "general",
+    "question": "禁煙と骨の関係について正しいものはどれか。",
+    "options": [
+      "喫煙は骨密度の低下と骨折リスクの上昇に関連する",
+      "喫煙は骨を強くする",
+      "喫煙と骨粗鬆症に関連はない",
+      "禁煙しても骨密度は変わらない"
+    ],
+    "answer": 0,
+    "explanation": "喫煙は骨密度の低下に関連し、骨粗鬆症や骨折のリスクを上昇させます。禁煙により骨密度の低下を防ぐことができます。"
+  },
+  {
+    "id": "c4_15",
+    "chapter": "第4章 禁煙の医学",
+    "type": "general",
+    "question": "喫煙が平均余命に与える影響として正しいものはどれか。",
+    "options": [
+      "喫煙者の平均余命は非喫煙者より約10年短い",
+      "喫煙は余命に影響しない",
+      "余命短縮は約1年程度である",
+      "女性喫煙者には余命短縮がない"
+    ],
+    "answer": 0,
+    "explanation": "喫煙者の平均余命は非喫煙者と比較して約10年短いとされています。"
+  },
+  {
+    "id": "c5_01",
+    "chapter": "第5章 薬局での禁煙支援",
+    "type": "check",
+    "question": "薬局で購入できるOTC禁煙補助薬はどれか。",
+    "options": [
+      "バレニクリン",
+      "ニコチンパッチ（OTC）",
+      "ブプロピオン",
+      "ノルトリプチリン"
+    ],
+    "answer": 1,
+    "explanation": "薬局で購入できるOTC禁煙補助薬にはニコチンパッチ（ニコチネルパッチ等）やニコチンガムがあります。"
+  },
+  {
+    "id": "c5_02",
+    "chapter": "第5章 薬局での禁煙支援",
+    "type": "general",
+    "question": "ニコチンガムの正しい使用方法はどれか。",
+    "options": [
+      "普通のガムのように噛み続ける",
+      "ゆっくり噛み、ピリッとしたら歯茎と頬の間に置く",
+      "飲み込む",
+      "水と一緒に噛む"
+    ],
+    "answer": 1,
+    "explanation": "ニコチンガムはゆっくり噛み、ピリッとした味がしたら歯茎と頬の間に置いて口腔粘膜からニコチンを吸収させます。"
+  },
+  {
+    "id": "c5_03",
+    "chapter": "第5章 薬局での禁煙支援",
+    "type": "general",
+    "question": "ニコチンパッチ（OTC）の使用期間として推奨されるものはどれか。",
+    "options": [
+      "1週間",
+      "4週間",
+      "8週間",
+      "6ヵ月"
+    ],
+    "answer": 2,
+    "explanation": "OTCニコチンパッチは通常8週間の使用が推奨されています。"
+  },
+  {
+    "id": "c5_04",
+    "chapter": "第5章 薬局での禁煙支援",
+    "type": "general",
+    "question": "ニコチンガム使用時に避けるべき飲み物はどれか。",
+    "options": [
+      "水",
+      "コーヒーなど酸性飲料",
+      "牛乳",
+      "お茶"
+    ],
+    "answer": 1,
+    "explanation": "コーヒー、ジュースなどの酸性飲料はニコチンの口腔粘膜からの吸収を低下させるため、使用前後15分は避けます。"
+  },
+  {
+    "id": "c5_05",
+    "chapter": "第5章 薬局での禁煙支援",
+    "type": "general",
+    "question": "薬剤師による禁煙支援について正しいものはどれか。",
+    "options": [
+      "OTC薬の販売と使用方法の指導が重要な役割である",
+      "処方薬の処方ができる",
+      "禁煙外来と同等の保険診療が行える",
+      "禁煙支援は医師のみが行うべきである"
+    ],
+    "answer": 0,
+    "explanation": "薬剤師はOTC禁煙補助薬の適切な販売、使用方法の指導、フォローアップが重要な役割です。"
+  },
+  {
+    "id": "c5_06",
+    "chapter": "第5章 薬局での禁煙支援",
+    "type": "general",
+    "question": "ニコチンパッチの副作用として最も多いものはどれか。",
+    "options": [
+      "貼付部位の皮膚症状（かゆみ・発赤）",
+      "頭痛",
+      "嘔気",
+      "不眠"
+    ],
+    "answer": 0,
+    "explanation": "ニコチンパッチの副作用で最も多いのは貼付部位の皮膚症状（かゆみ、発赤など）です。"
+  },
+  {
+    "id": "c5_07",
+    "chapter": "第5章 薬局での禁煙支援",
+    "type": "general",
+    "question": "ニコチンガムの1日最大使用個数（2mg製品）はどれか。",
+    "options": [
+      "6個",
+      "12個",
+      "24個",
+      "48個"
+    ],
+    "answer": 2,
+    "explanation": "ニコチンガム2mg製品の1日最大使用個数は24個とされています。"
+  },
+  {
+    "id": "c5_08",
+    "chapter": "第5章 薬局での禁煙支援",
+    "type": "general",
+    "question": "妊婦に対するニコチン代替療法について正しいものはどれか。",
+    "options": [
+      "安全に使用できる",
+      "原則として使用しない",
+      "ニコチンガムのみ使用可能",
+      "ニコチンパッチのみ使用可能"
+    ],
+    "answer": 1,
+    "explanation": "妊婦に対するニコチン代替療法は原則として使用しません。非薬物療法による禁煙支援が推奨されます。"
+  },
+  {
+    "id": "c5_09",
+    "chapter": "第5章 薬局での禁煙支援",
+    "type": "general",
+    "question": "ニコチンパッチを貼る際の注意点として正しいものはどれか。",
+    "options": [
+      "毎日同じ場所に貼る",
+      "毎日貼る場所を変える",
+      "入浴時は必ず剥がす",
+      "就寝前に剥がす"
+    ],
+    "answer": 1,
+    "explanation": "皮膚症状を防ぐため、毎日貼る場所を変えることが推奨されています。"
+  },
+  {
+    "id": "c5_10",
+    "chapter": "第5章 薬局での禁煙支援",
+    "type": "general",
+    "question": "禁煙補助薬を使用した場合の禁煙成功率について正しいものはどれか。",
+    "options": [
+      "使用しない場合の約2倍に向上する",
+      "変わらない",
+      "使用しない場合の約10倍になる",
+      "逆に低下する"
+    ],
+    "answer": 0,
+    "explanation": "禁煙補助薬を使用すると、使用しない場合と比較して禁煙成功率が約2倍に向上します。"
+  },
+  {
+    "id": "c6_01",
+    "chapter": "第6章 医療機関での禁煙支援",
+    "type": "check",
+    "question": "保険適用の禁煙治療の要件に含まれるものはどれか。",
+    "options": [
+      "ニコチン依存症のスクリーニングテスト(TDS)が5点以上",
+      "ブリンクマン指数が100以上",
+      "年齢が50歳以上",
+      "喫煙本数が1日5本以上"
+    ],
+    "answer": 0,
+    "explanation": "保険適用にはTDS(Tobacco Dependence Screener)が5点以上であることが要件の一つです。"
+  },
+  {
+    "id": "c6_02",
+    "chapter": "第6章 医療機関での禁煙支援",
+    "type": "check",
+    "question": "標準的な禁煙治療プログラムの期間はどれか。",
+    "options": [
+      "4週間",
+      "8週間",
+      "12週間",
+      "24週間"
+    ],
+    "answer": 2,
+    "explanation": "標準的な禁煙治療プログラムは12週間（初回＋4回の再診）で構成されます。"
+  },
+  {
+    "id": "c6_03",
+    "chapter": "第6章 医療機関での禁煙支援",
+    "type": "check",
+    "question": "禁煙治療の保険適用で、通院回数は合計何回か。",
+    "options": [
+      "3回",
+      "5回",
+      "7回",
+      "10回"
+    ],
+    "answer": 1,
+    "explanation": "12週間で初回を含め計5回の通院が標準的な禁煙治療プログラムです。"
+  },
+  {
+    "id": "c6_04",
+    "chapter": "第6章 医療機関での禁煙支援",
+    "type": "general",
+    "question": "バレニクリンの投与開始時期として正しいものはどれか。",
+    "options": [
+      "禁煙予定日の1週間前から",
+      "禁煙予定日当日から",
+      "禁煙予定日の1ヵ月前から",
+      "禁煙予定日の翌日から"
+    ],
+    "answer": 0,
+    "explanation": "バレニクリンは禁煙予定日の1週間前から投与を開始し、治療開始1週間は喫煙が可能です。"
+  },
+  {
+    "id": "c6_05",
+    "chapter": "第6章 医療機関での禁煙支援",
+    "type": "general",
+    "question": "バレニクリンの最も多い副作用はどれか。",
+    "options": [
+      "頭痛",
+      "嘔気",
+      "下痢",
+      "発疹"
+    ],
+    "answer": 1,
+    "explanation": "バレニクリンの副作用で最も多いのは嘔気（約30%）です。1杯の水で内服することが推奨されます。"
+  },
+  {
+    "id": "c6_06",
+    "chapter": "第6章 医療機関での禁煙支援",
+    "type": "general",
+    "question": "TDS（Tobacco Dependence Screener）の満点は何点か。",
+    "options": [
+      "5点",
+      "10点",
+      "15点",
+      "20点"
+    ],
+    "answer": 1,
+    "explanation": "TDSは10問の質問からなり、満点は10点です。5点以上でニコチン依存症と判定されます。"
+  },
+  {
+    "id": "c6_07",
+    "chapter": "第6章 医療機関での禁煙支援",
+    "type": "general",
+    "question": "禁煙外来で用いる呼気CO濃度測定について正しいものはどれか。",
+    "options": [
+      "喫煙者は通常8ppm以上を示す",
+      "非喫煙者でも20ppm以上になる",
+      "測定に30分の呼気停止が必要",
+      "CO濃度は食事の影響を受けない"
+    ],
+    "answer": 0,
+    "explanation": "通常喫煙者の呼気CO濃度は8ppm以上で、1日の喫煙本数に近い数値になることが多いです。"
+  },
+  {
+    "id": "c6_08",
+    "chapter": "第6章 医療機関での禁煙支援",
+    "type": "general",
+    "question": "5Aアプローチの「Assess」の意味として正しいものはどれか。",
+    "options": [
+      "喫煙状況を尋ねる",
+      "禁煙を勧める",
+      "禁煙への意欲を評価する",
+      "禁煙を支援する"
+    ],
+    "answer": 2,
+    "explanation": "5AのAssessは「禁煙への意欲を評価する」という意味です。"
+  },
+  {
+    "id": "c6_09",
+    "chapter": "第6章 医療機関での禁煙支援",
+    "type": "general",
+    "question": "禁煙の動機づけ強化のための5Rの「Reward」の意味はどれか。",
+    "options": [
+      "リスク",
+      "報酬（禁煙のメリット）",
+      "反復",
+      "関連性"
+    ],
+    "answer": 1,
+    "explanation": "5RのRewardは「報酬」すなわち禁煙することで得られるメリットを患者に伝えることです。"
+  },
+  {
+    "id": "c6_10",
+    "chapter": "第6章 医療機関での禁煙支援",
+    "type": "general",
+    "question": "5Rの「Roadblocks」の意味として正しいものはどれか。",
+    "options": [
+      "禁煙の障害となるもの",
+      "リスク",
+      "関連性",
+      "反復"
+    ],
+    "answer": 0,
+    "explanation": "Roadblocksは禁煙の障害（体重増加への不安、離脱症状など）を本人と一緒に確認することです。"
+  },
+  {
+    "id": "c6_11",
+    "chapter": "第6章 医療機関での禁煙支援",
+    "type": "general",
+    "question": "禁煙治療における行動療法として正しいものはどれか。",
+    "options": [
+      "喫煙のきっかけを避ける対処法を学ぶ",
+      "薬物療法のみで十分である",
+      "精神科入院が必要である",
+      "催眠療法が標準治療である"
+    ],
+    "answer": 0,
+    "explanation": "行動療法では喫煙のきっかけ（トリガー）を特定し、それを避ける対処法を学ぶことが重要です。"
+  },
+  {
+    "id": "c6_12",
+    "chapter": "第6章 医療機関での禁煙支援",
+    "type": "general",
+    "question": "禁煙治療における医療用ニコチンパッチの使用期間はどれか。",
+    "options": [
+      "4週間",
+      "8週間",
+      "10週間",
+      "12週間"
+    ],
+    "answer": 2,
+    "explanation": "医療用ニコチンパッチ（ニコチネルTTS）は通常8〜10週間かけて段階的に減量します。"
+  },
+  {
+    "id": "c6_13",
+    "chapter": "第6章 医療機関での禁煙支援",
+    "type": "general",
+    "question": "尿中コチニン検出キットNicCheck®について正しいものはどれか。",
+    "options": [
+      "色の濃淡で目視判定する",
+      "数値で正確に表示される",
+      "血液検査が必要である",
+      "保険適用外の検査である"
+    ],
+    "answer": 0,
+    "explanation": "NicCheck®は色の濃淡で目視判定するため慣れが必要ですが、加熱式タバコの喫煙指標としても使用できます。"
+  },
+  {
+    "id": "c6_14",
+    "chapter": "第6章 医療機関での禁煙支援",
+    "type": "general",
+    "question": "禁煙外来のドロップアウト防止策として正しいものはどれか。",
+    "options": [
+      "次回予約を必ず取る、電話やメールでフォローする",
+      "途中で来なくなっても連絡しない",
+      "初回のみ手厚く対応する",
+      "薬を多めに処方して通院回数を減らす"
+    ],
+    "answer": 0,
+    "explanation": "ドロップアウト防止には次回予約の確保、来院しない場合の電話連絡やメールフォローが重要です。"
+  },
+  {
+    "id": "c6_15",
+    "chapter": "第6章 医療機関での禁煙支援",
+    "type": "general",
+    "question": "加熱式タバコ使用者の禁煙治療について正しいものはどれか。",
+    "options": [
+      "保険適用の禁煙治療の対象となる",
+      "禁煙治療の対象外である",
+      "加熱式タバコは安全なので治療不要",
+      "紙巻タバコに変更してから治療開始する"
+    ],
+    "answer": 0,
+    "explanation": "加熱式タバコ使用者も保険適用の禁煙治療の対象となります。"
+  },
+  {
+    "id": "c6_16",
+    "chapter": "第6章 医療機関での禁煙支援",
+    "type": "general",
+    "question": "禁煙治療における看護師の役割として正しいものはどれか。",
+    "options": [
+      "禁煙継続の支援と患者教育が重要である",
+      "看護師は禁煙支援に関与しない",
+      "処方のみを担当する",
+      "初回面談のみを担当する"
+    ],
+    "answer": 0,
+    "explanation": "看護師は禁煙継続への励まし、患者教育、フォローアップなど重要な役割を担います。"
+  },
+  {
+    "id": "c6_17",
+    "chapter": "第6章 医療機関での禁煙支援",
+    "type": "general",
+    "question": "オンライン禁煙外来について正しいものはどれか。",
+    "options": [
+      "対面診療と同等の禁煙成功率が報告されている",
+      "対面より著しく成功率が低い",
+      "保険適用外である",
+      "法的に認められていない"
+    ],
+    "answer": 0,
+    "explanation": "オンライン禁煙外来は対面診療と同等の禁煙成功率が報告されており、利便性が高いとされています。"
+  },
+  {
+    "id": "c6_18",
+    "chapter": "第6章 医療機関での禁煙支援",
+    "type": "general",
+    "question": "禁煙治療の再保険適用について正しいものはどれか。",
+    "options": [
+      "前回の治療開始日から1年経過すれば再度保険適用可能",
+      "一度使用したら二度と保険適用されない",
+      "半年後に再適用可能",
+      "3年後に再適用可能"
+    ],
+    "answer": 0,
+    "explanation": "前回の禁煙治療の開始日から1年が経過していれば、再度保険適用の禁煙治療を受けることができます。"
+  },
+  {
+    "id": "c6_19",
+    "chapter": "第6章 医療機関での禁煙支援",
+    "type": "general",
+    "question": "バレニクリンと併用注意の薬剤はどれか。",
+    "options": [
+      "シメチジン",
+      "アスピリン",
+      "メトホルミン",
+      "ワルファリン"
+    ],
+    "answer": 0,
+    "explanation": "シメチジンはバレニクリンの腎クリアランスを低下させるため、特に重度の腎機能障害の患者では併用注意です。"
+  },
+  {
+    "id": "c6_20",
+    "chapter": "第6章 医療機関での禁煙支援",
+    "type": "general",
+    "question": "バレニクリンの投与が12週で終了した後について正しいものはどれか。",
+    "options": [
+      "医師の判断で自費での継続治療が可能",
+      "必ず24週まで延長する",
+      "延長は認められない",
+      "他の薬に変更する"
+    ],
+    "answer": 0,
+    "explanation": "12週間の治療終了後、患者が継続を希望した場合は医師の判断で自費での継続治療が可能です。"
+  },
+  {
+    "id": "c7_01",
+    "chapter": "第7章 世界の潮流",
+    "type": "general",
+    "question": "日本の成人喫煙率の推移について正しいものはどれか。",
+    "options": [
+      "男女ともに低下傾向にある",
+      "男性のみ低下し女性は上昇している",
+      "男女ともに上昇している",
+      "変化していない"
+    ],
+    "answer": 0,
+    "explanation": "日本の成人喫煙率は男女ともに低下傾向にありますが、国際的にはまだ高い水準にあります。"
+  },
+  {
+    "id": "c7_02",
+    "chapter": "第7章 世界の潮流",
+    "type": "general",
+    "question": "世界禁煙デーはいつか。",
+    "options": [
+      "1月1日",
+      "3月9日",
+      "5月31日",
+      "12月1日"
+    ],
+    "answer": 2,
+    "explanation": "世界禁煙デーは毎年5月31日で、WHOが定めた啓発の日です。"
+  },
+  {
+    "id": "c7_03",
+    "chapter": "第7章 世界の潮流",
+    "type": "general",
+    "question": "MPOWERパッケージに含まれない施策はどれか。",
+    "options": [
+      "タバコ税の引き上げ",
+      "タバコの屋外使用全面禁止",
+      "受動喫煙防止",
+      "禁煙支援の提供"
+    ],
+    "answer": 1,
+    "explanation": "MPOWERはWHO FCTCの主要施策で、Monitor, Protect, Offer, Warn, Enforce, Raiseの6つからなります。"
+  },
+  {
+    "id": "c7_04",
+    "chapter": "第7章 世界の潮流",
+    "type": "general",
+    "question": "タバコのプレーンパッケージ（標準化パッケージ）を世界で最初に導入した国はどれか。",
+    "options": [
+      "アメリカ",
+      "イギリス",
+      "オーストラリア",
+      "フランス"
+    ],
+    "answer": 2,
+    "explanation": "オーストラリアが2012年に世界で最初にプレーンパッケージを導入しました。"
+  },
+  {
+    "id": "c7_05",
+    "chapter": "第7章 世界の潮流",
+    "type": "general",
+    "question": "日本のたばこ税について正しいものはどれか。",
+    "options": [
+      "先進国の中では比較的低い水準にある",
+      "世界で最も高い",
+      "税率は過去30年変わっていない",
+      "たばこ税は地方税のみである"
+    ],
+    "answer": 0,
+    "explanation": "日本のたばこ税は先進国の中では比較的低い水準にあり、WHO FCTCでもたばこ税引き上げが推奨されています。"
+  },
+  {
+    "id": "c8_01",
+    "chapter": "第8章 受動喫煙防止",
+    "type": "check",
+    "question": "改正健康増進法における「第一種施設」に該当するものはどれか。",
+    "options": [
+      "学校・病院・行政機関",
+      "飲食店",
+      "ホテルのロビー",
+      "パチンコ店"
+    ],
+    "answer": 0,
+    "explanation": "第一種施設（学校、病院、行政機関など）は敷地内禁煙が原則です。"
+  },
+  {
+    "id": "c8_02",
+    "chapter": "第8章 受動喫煙防止",
+    "type": "general",
+    "question": "改正健康増進法における「第二種施設」について正しいものはどれか。",
+    "options": [
+      "原則屋内禁煙だが喫煙専用室の設置が可能",
+      "敷地内完全禁煙",
+      "規制の対象外",
+      "屋外のみ規制される"
+    ],
+    "answer": 0,
+    "explanation": "第二種施設（飲食店、事務所等）は原則屋内禁煙ですが、喫煙専用室の設置が認められています。"
+  },
+  {
+    "id": "c8_03",
+    "chapter": "第8章 受動喫煙防止",
+    "type": "general",
+    "question": "受動喫煙防止対策として科学的に有効でないものはどれか。",
+    "options": [
+      "喫煙室の設置",
+      "分煙（空間分煙のみ）",
+      "完全禁煙",
+      "空気清浄機"
+    ],
+    "answer": 3,
+    "explanation": "空気清浄機はタバコ煙の粒子を一部除去できますが、ガス状有害物質は除去できず、受動喫煙防止には不十分です。"
+  },
+  {
+    "id": "c8_04",
+    "chapter": "第8章 受動喫煙防止",
+    "type": "general",
+    "question": "屋外喫煙所の設置基準について正しいものはどれか。",
+    "options": [
+      "建物の出入口から一定の距離を確保する必要がある",
+      "特に基準はない",
+      "屋内と同じ基準である",
+      "喫煙者のみ利用可能であれば場所は問わない"
+    ],
+    "answer": 0,
+    "explanation": "屋外喫煙所は建物の出入口や通路から十分な距離を確保し、周囲への煙の流出を防ぐ配慮が必要です。"
+  },
+  {
+    "id": "c8_05",
+    "chapter": "第8章 受動喫煙防止",
+    "type": "general",
+    "question": "職場における受動喫煙防止の法的根拠はどれか。",
+    "options": [
+      "労働安全衛生法",
+      "食品衛生法",
+      "消防法",
+      "建築基準法"
+    ],
+    "answer": 0,
+    "explanation": "労働安全衛生法に基づき、事業者は職場における受動喫煙防止のための措置を講じる努力義務があります。"
+  },
+  {
+    "id": "c9_01",
+    "chapter": "第9章 禁煙教育",
+    "type": "check",
+    "question": "学校における喫煙防止教育の目的として正しいものはどれか。",
+    "options": [
+      "喫煙の害を正しく理解させ、未成年の喫煙を防止する",
+      "喫煙マナーを教える",
+      "タバコ税の仕組みを教える",
+      "喫煙室の使い方を教える"
+    ],
+    "answer": 0,
+    "explanation": "学校における喫煙防止教育は、喫煙の害を正しく理解させ、未成年の喫煙を防止することが目的です。"
+  },
+  {
+    "id": "c9_02",
+    "chapter": "第9章 禁煙教育",
+    "type": "general",
+    "question": "喫煙開始年齢が早いほど起こりやすいこととして正しいものはどれか。",
+    "options": [
+      "ニコチン依存が重度になりやすい",
+      "禁煙しやすくなる",
+      "健康への影響は変わらない",
+      "依存が形成されにくい"
+    ],
+    "answer": 0,
+    "explanation": "喫煙開始年齢が早いほどニコチン依存が重度になりやすく、禁煙が困難になります。"
+  },
+  {
+    "id": "c9_03",
+    "chapter": "第9章 禁煙教育",
+    "type": "general",
+    "question": "未成年者の喫煙の特徴として正しいものはどれか。",
+    "options": [
+      "少量の喫煙でもニコチン依存が早期に形成される",
+      "成人と同程度の本数で依存が形成される",
+      "未成年者にはニコチン依存は形成されない",
+      "未成年者の喫煙は健康に影響しない"
+    ],
+    "answer": 0,
+    "explanation": "未成年者は少量の喫煙でもニコチン依存が早期に形成されやすいことが知られています。"
+  },
+  {
+    "id": "c9_04",
+    "chapter": "第9章 禁煙教育",
+    "type": "general",
+    "question": "効果的な喫煙防止教育の方法として正しいものはどれか。",
+    "options": [
+      "ロールプレイなど参加型の学習が効果的",
+      "一方的な講義のみが効果的",
+      "恐怖心を煽ることが最も効果的",
+      "教科書の読み合わせのみで十分"
+    ],
+    "answer": 0,
+    "explanation": "参加型学習（ロールプレイ、グループディスカッションなど）が喫煙防止教育に効果的です。"
+  },
+  {
+    "id": "c9_05",
+    "chapter": "第9章 禁煙教育",
+    "type": "general",
+    "question": "医療系学生への禁煙教育が重要な理由はどれか。",
+    "options": [
+      "将来、患者の禁煙支援を行う立場になるため",
+      "医療系学生は喫煙しないため",
+      "国家試験に出題されるため",
+      "法律で義務付けられているため"
+    ],
+    "answer": 0,
+    "explanation": "医療系学生は将来、患者への禁煙支援や健康教育を行う立場になるため、禁煙に関する知識は不可欠です。"
+  },
+  {
+    "id": "c9_06",
+    "chapter": "第9章 禁煙教育",
+    "type": "general",
+    "question": "ピアプレッシャー（仲間からの圧力）への対処法として教育で用いられるものはどれか。",
+    "options": [
+      "断り方のスキルを練習する",
+      "仲間と同調することを勧める",
+      "無視する方法を教える",
+      "別の友人を見つけることを勧める"
+    ],
+    "answer": 0,
+    "explanation": "喫煙の誘いに対する断り方のスキル（リフューザルスキル）を練習することが教育で用いられます。"
+  },
+  {
+    "id": "c9_07",
+    "chapter": "第9章 禁煙教育",
+    "type": "general",
+    "question": "タバコ産業のマーケティング戦略について教育で扱う理由はどれか。",
+    "options": [
+      "若者がターゲットにされていることを理解させるため",
+      "タバコ産業を応援するため",
+      "タバコの歴史を学ぶため",
+      "経済学の教材として"
+    ],
+    "answer": 0,
+    "explanation": "タバコ産業が若者をターゲットにしたマーケティングを行っていることを理解させ、批判的思考を促します。"
+  },
+  {
+    "id": "c9_08",
+    "chapter": "第9章 禁煙教育",
+    "type": "general",
+    "question": "日本における未成年者喫煙禁止法について正しいものはどれか。",
+    "options": [
+      "20歳未満の喫煙を禁止している",
+      "罰則はない",
+      "高校生以上は対象外",
+      "飲食店では適用されない"
+    ],
+    "answer": 0,
+    "explanation": "未成年者喫煙禁止法により20歳未満の喫煙は禁止されています。"
+  },
+  {
+    "id": "c10_01",
+    "chapter": "第10章 パッケージ",
+    "type": "general",
+    "question": "日本のタバコパッケージの健康警告表示について正しいものはどれか。",
+    "options": [
+      "健康警告の文字表示が義務付けられている",
+      "警告表示は不要である",
+      "写真付き警告が義務付けられている",
+      "メーカーの任意である"
+    ],
+    "answer": 0,
+    "explanation": "日本ではタバコパッケージに文字による健康警告の表示が義務付けられていますが、写真付き警告は義務化されていません。"
+  },
+  {
+    "id": "c10_02",
+    "chapter": "第10章 パッケージ",
+    "type": "general",
+    "question": "WHO FCTCが推奨するタバコパッケージの警告表示面積はどれか。",
+    "options": [
+      "表示面積の30%以上",
+      "表示面積の50%以上",
+      "表示面積の10%以上",
+      "表示は不要"
+    ],
+    "answer": 1,
+    "explanation": "WHO FCTCはパッケージの主要面の50%以上に警告表示を行うことを推奨しています。"
+  },
+  {
+    "id": "c10_03",
+    "chapter": "第10章 パッケージ",
+    "type": "general",
+    "question": "プレーンパッケージの特徴として正しいものはどれか。",
+    "options": [
+      "ブランドロゴやデザインを排除し統一デザインにする",
+      "ブランド名を大きく表示する",
+      "自由なデザインを許可する",
+      "警告表示をなくす"
+    ],
+    "answer": 0,
+    "explanation": "プレーンパッケージはブランドロゴ、色、デザインを排除し、統一されたパッケージデザインにする規制です。"
+  },
+  {
+    "id": "c10_04",
+    "chapter": "第10章 パッケージ",
+    "type": "general",
+    "question": "タバコパッケージに写真付き警告を導入している国の割合として近いものはどれか。",
+    "options": [
+      "約10%",
+      "約30%",
+      "120か国以上が導入",
+      "導入している国はない"
+    ],
+    "answer": 2,
+    "explanation": "世界では120か国以上がタバコパッケージに写真付き（グラフィック）警告を導入しています。"
+  },
+  {
+    "id": "c10_05",
+    "chapter": "第10章 パッケージ",
+    "type": "general",
+    "question": "タバコパッケージの「ライト」「マイルド」という表記について正しいものはどれか。",
+    "options": [
+      "WHO FCTCで使用禁止が求められている",
+      "使用が推奨されている",
+      "健康被害が少ないことを意味する",
+      "日本では自由に使用できる"
+    ],
+    "answer": 0,
+    "explanation": "「ライト」「マイルド」はタバコの害が少ないという誤解を与えるため、WHO FCTCで使用禁止が求められています。"
+  },
+  {
+    "id": "c11_01",
+    "chapter": "第11章 その他",
+    "type": "check",
+    "question": "電子タバコ（Eシガレット）について正しいものはどれか。",
+    "options": [
+      "日本ではニコチン入り電子タバコの販売は薬機法で規制されている",
+      "電子タバコは完全に無害である",
+      "日本では自由に販売できる",
+      "電子タバコはWHOが推奨している"
+    ],
+    "answer": 0,
+    "explanation": "日本ではニコチン入り電子タバコ用液体は薬機法（医薬品医療機器等法）により規制されています。"
+  },
+  {
+    "id": "c11_02",
+    "chapter": "第11章 その他",
+    "type": "check",
+    "question": "加熱式タバコの種類に含まれないものはどれか。",
+    "options": [
+      "IQOS",
+      "glo",
+      "Ploom",
+      "電子タバコ（vape）"
+    ],
+    "answer": 3,
+    "explanation": "IQOS、glo、Ploomは加熱式タバコの代表的な製品です。電子タバコ（vape）はリキッドを加熱する別カテゴリーです。"
+  },
+  {
+    "id": "c11_03",
+    "chapter": "第11章 その他",
+    "type": "general",
+    "question": "禁煙と保険について正しいものはどれか。",
+    "options": [
+      "非喫煙者割引のある生命保険がある",
+      "喫煙者と非喫煙者で保険料に差はない",
+      "禁煙しても保険料は変わらない",
+      "喫煙者のほうが保険料が安い"
+    ],
+    "answer": 0,
+    "explanation": "多くの生命保険会社で非喫煙者割引が設定されており、禁煙することで保険料が安くなる場合があります。"
+  },
+  {
+    "id": "c11_04",
+    "chapter": "第11章 その他",
+    "type": "general",
+    "question": "喫煙による経済的損失について正しいものはどれか。",
+    "options": [
+      "医療費の増大や労働生産性の低下をもたらす",
+      "経済的影響はない",
+      "タバコ税の税収で相殺される",
+      "喫煙は経済にプラスの効果がある"
+    ],
+    "answer": 0,
+    "explanation": "喫煙は医療費増大、労働生産性の低下、早期死亡による経済損失など多大な経済的損失をもたらします。"
+  },
+  {
+    "id": "c11_05",
+    "chapter": "第11章 その他",
+    "type": "general",
+    "question": "禁煙治療における認知行動療法の目的はどれか。",
+    "options": [
+      "喫煙に関連する思考パターンや行動を変容させる",
+      "薬物療法の代替として行う",
+      "催眠状態で禁煙を促す",
+      "喫煙の記憶を消去する"
+    ],
+    "answer": 0,
+    "explanation": "認知行動療法は喫煙に関する思考パターンや行動パターンを認識し、変容させることを目的とします。"
+  },
+  {
+    "id": "c11_06",
+    "chapter": "第11章 その他",
+    "type": "general",
+    "question": "飲酒と喫煙の関係について正しいものはどれか。",
+    "options": [
+      "飲酒は喫煙欲求を高める",
+      "飲酒は禁煙を促進する",
+      "飲酒と喫煙に関連はない",
+      "少量の飲酒は禁煙に有効である"
+    ],
+    "answer": 0,
+    "explanation": "飲酒は喫煙欲求を高めるため、禁煙中は飲酒を控えるか減らすことが推奨されます。"
+  },
+  {
+    "id": "c11_07",
+    "chapter": "第11章 その他",
+    "type": "general",
+    "question": "精神疾患患者の喫煙率について正しいものはどれか。",
+    "options": [
+      "一般人口より高い傾向がある",
+      "一般人口と同程度である",
+      "一般人口より低い",
+      "精神疾患患者は喫煙しない"
+    ],
+    "answer": 0,
+    "explanation": "精神疾患患者の喫煙率は一般人口より高い傾向があり、特に統合失調症患者では顕著です。"
+  },
+  {
+    "id": "c11_08",
+    "chapter": "第11章 その他",
+    "type": "general",
+    "question": "うつ病患者の禁煙治療で注意すべきことはどれか。",
+    "options": [
+      "うつ症状の悪化に注意し精神科主治医と連携する",
+      "うつ病患者には禁煙治療を行わない",
+      "バレニクリンが第一選択である",
+      "特に注意は不要である"
+    ],
+    "answer": 0,
+    "explanation": "うつ病患者の禁煙治療ではうつ症状の悪化に注意し、精神科の主治医と緊密な連携を取ることが重要です。"
+  },
+  {
+    "id": "c11_09",
+    "chapter": "第11章 その他",
+    "type": "general",
+    "question": "心筋梗塞後の禁煙について正しいものはどれか。",
+    "options": [
+      "禁煙により死亡率が有意に低下する",
+      "急性期には考慮不要である",
+      "心臓リハビリテーションのほうが重要である",
+      "禁煙効果はない"
+    ],
+    "answer": 0,
+    "explanation": "心筋梗塞後の禁煙は死亡率を有意に低下させ、心臓リハビリテーション以上に重要とされています。"
+  },
+  {
+    "id": "c11_10",
+    "chapter": "第11章 その他",
+    "type": "general",
+    "question": "禁煙支援アプリについて正しいものはどれか。",
+    "options": [
+      "禁煙継続に有効であるというエビデンスがある",
+      "効果はないとされている",
+      "医療機器として承認されたものはない",
+      "スマートフォンでは利用できない"
+    ],
+    "answer": 0,
+    "explanation": "禁煙支援アプリは禁煙継続に有効であるエビデンスがあり、治療用アプリとして承認されたものもあります。"
+  },
+  {
+    "id": "c11_11",
+    "chapter": "第11章 その他",
+    "type": "general",
+    "question": "コチニンについて正しいものはどれか。",
+    "options": [
+      "ニコチンの主要代謝物で尿中半減期は約24時間である",
+      "ニコチンそのものである",
+      "タバコ煙に直接含まれる",
+      "半減期は1時間以下である"
+    ],
+    "answer": 0,
+    "explanation": "コチニンはニコチンの主要代謝物で、尿中半減期は約24時間と長いため、喫煙の客観的指標として利用されます。"
+  },
+  {
+    "id": "c11_12",
+    "chapter": "第11章 その他",
+    "type": "general",
+    "question": "禁煙マラソンとは何か。",
+    "options": [
+      "インターネットを利用した禁煙支援プログラム",
+      "42.195kmを走る禁煙イベント",
+      "禁煙薬の名称",
+      "禁煙外来の別称"
+    ],
+    "answer": 0,
+    "explanation": "禁煙マラソンはインターネット（メーリングリスト等）を利用した仲間同士の禁煙支援プログラムです。"
+  },
+  {
+    "id": "c11_13",
+    "chapter": "第11章 その他",
+    "type": "general",
+    "question": "喫煙とCOVID-19の関係について正しいものはどれか。",
+    "options": [
+      "喫煙はCOVID-19重症化のリスク因子である",
+      "喫煙はCOVID-19を予防する",
+      "喫煙とCOVID-19に関連はない",
+      "喫煙者のほうが軽症で済む"
+    ],
+    "answer": 0,
+    "explanation": "喫煙はCOVID-19の重症化リスクを高めることが報告されており、禁煙の重要が改めて注目されています。"
+  },
+  {
+    "id": "c11_14",
+    "chapter": "第11章 その他",
+    "type": "general",
+    "question": "水タバコ（シーシャ）について正しいものはどれか。",
+    "options": [
+      "一般のタバコと同様に有害物質を含む",
+      "無害である",
+      "ニコチンを含まない",
+      "受動喫煙の心配はない"
+    ],
+    "answer": 0,
+    "explanation": "水タバコ（シーシャ）はフレーバーがついていますが、一般のタバコと同様にニコチンや有害物質を含み有害です。"
+  },
+  {
+    "id": "c11_15",
+    "chapter": "第11章 その他",
+    "type": "general",
+    "question": "禁煙支援における動機づけ面接法の特徴はどれか。",
+    "options": [
+      "患者自身の変化への動機を引き出す対話技法である",
+      "医師の指示に厳密に従わせる手法",
+      "薬物療法の一種",
+      "集団教育の方法"
+    ],
+    "answer": 0,
+    "explanation": "動機づけ面接法は患者自身の中にある変化への動機を引き出す、共感的・協働的な対話技法です。"
+  },
+  {
+    "id": "c11_16",
+    "chapter": "第11章 その他",
+    "type": "general",
+    "question": "禁煙の日として日本禁煙学会が推奨しているのはいつか。",
+    "options": [
+      "毎月22日（スワンスワンの日）",
+      "毎月1日",
+      "毎週月曜日",
+      "1月1日のみ"
+    ],
+    "answer": 0,
+    "explanation": "日本禁煙学会は毎月22日を「スワンスワン（吸わん吸わん）の日」として禁煙の日に推奨しています。"
+  },
+  {
+    "id": "c11_17",
+    "chapter": "第11章 その他",
+    "type": "general",
+    "question": "ニコチン依存症管理料の算定要件として正しいものはどれか。",
+    "options": [
+      "敷地内禁煙であることが要件に含まれる",
+      "敷地内に喫煙所があってもよい",
+      "要件はない",
+      "入院患者のみが対象である"
+    ],
+    "answer": 0,
+    "explanation": "ニコチン依存症管理料の算定には、医療機関が敷地内禁煙であることが要件に含まれています。"
+  },
+  {
+    "id": "c11_18",
+    "chapter": "第11章 その他",
+    "type": "general",
+    "question": "禁煙によるメリットとして経験されないものはどれか。",
+    "options": [
+      "食事がおいしく感じられる",
+      "息切れが改善する",
+      "肌の状態が改善する",
+      "視力低下が起こる"
+    ],
+    "answer": 3,
+    "explanation": "禁煙により味覚・嗅覚の改善、呼吸機能の改善、肌の改善などが経験されます。視力低下は禁煙のデメリットではありません。"
+  },
+  {
+    "id": "c11_19",
+    "chapter": "第11章 その他",
+    "type": "general",
+    "question": "日本禁煙学会認定の資格として正しいものはどれか。",
+    "options": [
+      "禁煙認定指導者（禁煙専門指導者・禁煙指導者）",
+      "禁煙カウンセラー",
+      "禁煙コンサルタント",
+      "禁煙セラピスト"
+    ],
+    "answer": 0,
+    "explanation": "日本禁煙学会には禁煙専門指導者と禁煙指導者の認定制度があります。"
+  },
+  {
+    "id": "c11_20",
+    "chapter": "第11章 その他",
+    "type": "general",
+    "question": "喫煙者の歯科治療について正しいものはどれか。",
+    "options": [
+      "インプラント治療の成功率が低下する",
+      "喫煙は歯科治療に影響しない",
+      "喫煙者のほうが歯の治癒が早い",
+      "歯周病治療は喫煙者にも同等に効果がある"
+    ],
+    "answer": 0,
+    "explanation": "喫煙はインプラントの成功率を低下させ、歯周病治療の効果も減弱させるため、歯科治療前の禁煙が推奨されます。"
+  },
+  {
+    "id": "exam01",
+    "chapter": "試験問題例",
+    "type": "exam",
+    "question": "タバコ煙に含まれる化学物質について正しいものはどれか。",
+    "options": [
+      "タバコ煙にはおよそ100種類の化学物質が含まれる",
+      "タバコ煙には約5,000種類以上の化学物質が含まれる",
+      "タバコ煙に含まれる有害物質はニコチンのみである",
+      "タバコの主流煙は副流煙より有害物質が多い"
+    ],
+    "answer": 1,
+    "explanation": "タバコの煙には約5,300種類の化学物質が含まれ、粒子成分が約4,300種類、ガス成分が約1,000種類とされています。"
+  },
+  {
+    "id": "exam02",
+    "chapter": "試験問題例",
+    "type": "exam",
+    "question": "能動喫煙とともに受動喫煙でも頻度が増加するとされている精神疾患はどれか。",
+    "options": [
+      "統合失調症",
+      "パニック障害",
+      "双極性障害",
+      "うつ病"
+    ],
+    "answer": 3,
+    "explanation": "能動喫煙とともに受動喫煙でもうつ病の頻度が増加するといわれています。うつ病患者の禁煙治療では、うつ症状の悪化に注意が必要です。"
+  },
+  {
+    "id": "exam03",
+    "chapter": "試験問題例",
+    "type": "exam",
+    "question": "呼気CO濃度測定について正しいものはどれか。",
+    "options": [
+      "呼気CO濃度測定は呼気を15秒あるいは20秒停止して行う",
+      "呼気CO濃度は食事の影響を受けない",
+      "非喫煙者の呼気CO濃度は通常20ppm以上である",
+      "CO測定器は他のガスとの干渉を完全に排除できる"
+    ],
+    "answer": 0,
+    "explanation": "呼気CO濃度測定は測定器により15秒あるいは20秒の呼気停止が必要です。通常喫煙者の呼気濃度は8ppm以上で、1日の喫煙本数に近い数値になることが多いとされています。乳糖不耐症では水素ガスが影響し高値となる可能性があります。"
+  },
+  {
+    "id": "exam04",
+    "chapter": "試験問題例",
+    "type": "exam",
+    "question": "禁煙補助薬バレニクリン（チャンピックス®）について正しいものはどれか。",
+    "options": [
+      "肝機能障害では投与量を減らす必要がある",
+      "禁煙予定日から投与を開始する",
+      "主として腎排泄される",
+      "副作用で最も多いのは頭痛である"
+    ],
+    "answer": 2,
+    "explanation": "バレニクリンは主として腎排泄されるため、重度の腎機能障害のある患者では血中濃度が高くなるおそれがあります。禁煙予定日の1週間前から投与開始し、12週間経口投与します。副作用で最も多いのは嘔気（約30%）です。"
+  },
+  {
+    "id": "exam05",
+    "chapter": "試験問題例",
+    "type": "exam",
+    "question": "喫煙患者への介入方法としての5Aアプローチに含まれないものはどれか。",
+    "options": [
+      "Ask（喫煙状況を尋ねる）",
+      "Advise（禁煙を勧める）",
+      "Avoid（喫煙環境を避ける）",
+      "Assist（禁煙を支援する）"
+    ],
+    "answer": 2,
+    "explanation": "5Aアプローチは、Ask（尋ねる）、Advise（勧める）、Assess（評価する）、Assist（支援する）、Arrange（準備する）です。「Avoid」は含まれません。"
+  },
+  {
+    "id": "exam06",
+    "chapter": "試験問題例",
+    "type": "exam",
+    "question": "禁煙の動機づけを強化するための5Rに含まれないものはどれか。",
+    "options": [
+      "Relevance（関連性）",
+      "Risks（リスク）",
+      "Recovery（回復）",
+      "Repetition（反復）"
+    ],
+    "answer": 2,
+    "explanation": "5Rは、Relevance（関連性）、Risks（リスク）、Reward（報酬）、Roadblocks（障害）、Repetition（反復）です。「Recovery」は含まれません。"
+  },
+  {
+    "id": "exam07",
+    "chapter": "試験問題例",
+    "type": "exam",
+    "question": "妊娠中の喫煙について正しいものはどれか。",
+    "options": [
+      "妊娠初期の喫煙のみがリスクとなる",
+      "妊娠後期の喫煙は胎児に影響しない",
+      "喫煙している妊婦から生まれた児は肥満や糖尿病を発症しやすい",
+      "妊娠中の禁煙には常にニコチンパッチが推奨される"
+    ],
+    "answer": 2,
+    "explanation": "妊娠中の喫煙はどの時期でもリスクがあります。喫煙している妊娠中の女性から生まれた児は肥満や糖尿病を発症しやすいことが知られています。"
+  },
+  {
+    "id": "exam08",
+    "chapter": "試験問題例",
+    "type": "exam",
+    "question": "INTER-HEART試験における喫煙による心筋梗塞リスクは何倍か。",
+    "options": [
+      "3.0倍",
+      "1.5倍",
+      "5.0倍",
+      "2.0倍"
+    ],
+    "answer": 0,
+    "explanation": "50か国以上で行われたINTER-HEART試験において、喫煙による心筋梗塞リスクは3.0倍であり、糖尿病（3.0倍）と同等、高血圧（2.7倍）や肥満（1.2倍）より高値です。"
+  },
+  {
+    "id": "exam09",
+    "chapter": "試験問題例",
+    "type": "exam",
+    "question": "統合失調症患者における喫煙について正しいものはどれか。",
+    "options": [
+      "統合失調症患者の喫煙率は一般人口と同程度である",
+      "喫煙は統合失調症の陰性症状や認知機能障害を緩和するといわれている",
+      "統合失調症の陽性症状には感情鈍麻が含まれる",
+      "統合失調症患者では禁煙治療は禁忌である"
+    ],
+    "answer": 1,
+    "explanation": "統合失調症患者では喫煙率が高く、喫煙が感情の平板化（感情鈍麻）・思考の貧困・意欲の欠如などの陰性症状、認知機能障害、抗精神病薬による錐体外路症状を緩和するといわれています。"
+  },
+  {
+    "id": "exam10",
+    "chapter": "試験問題例",
+    "type": "exam",
+    "question": "受動喫煙による健康影響について正しいものはどれか。",
+    "options": [
+      "受動喫煙は総死亡率に影響しない",
+      "受動喫煙で脳卒中死は29%増加する",
+      "受動喫煙は冠動脈疾患にのみ影響する",
+      "受動喫煙はがんリスクに影響しない"
+    ],
+    "answer": 1,
+    "explanation": "受動喫煙のある場合は、総死亡18%、冠動脈疾患死23%、心血管疾患死23%、脳卒中死29%、全がん死が16%増加していたことが報告されています。"
+  },
+  {
+    "id": "exam11",
+    "chapter": "試験問題例",
+    "type": "exam",
+    "question": "バレニクリンのα4β2ニコチン受容体に対する作用について正しいものはどれか。",
+    "options": [
+      "完全作動薬として作用する",
+      "拮抗作用と刺激作用の二重の働き（dual action）がある",
+      "完全拮抗薬として作用する",
+      "受容体には結合しない"
+    ],
+    "answer": 1,
+    "explanation": "バレニクリンはα4β2ニコチン受容体に高い親和性をもち、ニコチンを遮断する拮抗作用と、少量のドパミンを放出させる刺激作用の二重の働き（dual action）があります。"
+  },
+  {
+    "id": "exam12",
+    "chapter": "試験問題例",
+    "type": "exam",
+    "question": "タバコの依存性について正しいものはどれか。",
+    "options": [
+      "タバコの依存性は身体的依存のみである",
+      "ニコチンがα4β2受容体に結合するとドパミンが放出され快感を生じる",
+      "ニコチンの血中半減期は約24時間である",
+      "依存性には添加物は関係しない"
+    ],
+    "answer": 1,
+    "explanation": "ニコチンが脳内のα4β2ニコチン受容体に結合するとドパミンが放出され快感が生じます。これがタバコ依存の主要なメカニズムです。依存性を高めるための添加物も多数使用されています。"
+  }
+];
+}
+
+// ===== LocalStorage =====
+function saveState() {
+    const state = {
+        quizMode,
+        currentIndex,
+        correctCount,
+        wrongIds,
+        questionIds: currentQuestions.map(q => q.id),
+        totalAnswered: getTotalAnswered(),
+        totalCorrect: getTotalCorrect(),
+        allWrongIds: getAllWrongIds()
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function loadState() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : null;
+    } catch {
+        return null;
+    }
+}
+
+function getTotalAnswered() {
+    const state = loadState();
+    return state ? (state.totalAnswered || 0) : 0;
+}
+
+function getTotalCorrect() {
+    const state = loadState();
+    return state ? (state.totalCorrect || 0) : 0;
+}
+
+function getAllWrongIds() {
+    const state = loadState();
+    return state ? (state.allWrongIds || []) : [];
+}
+
+function resetProgress() {
+    if (confirm('学習記録をすべてリセットしますか？')) {
+        localStorage.removeItem(STORAGE_KEY);
+        updateStartScreen();
+    }
+}
+
+// ===== スタート画面 =====
+function updateStartScreen() {
+    const state = loadState();
+    const statsEl = document.getElementById('start-stats');
+    const btnResume = document.getElementById('btn-resume');
+    const btnWrong = document.getElementById('btn-start-wrong');
+    const btnReset = document.getElementById('btn-reset');
+
+    // 統計情報の表示
+    const totalQ = allQuestions.length;
+    if (state && state.totalAnswered > 0) {
+        const rate = state.totalCorrect > 0 
+            ? Math.round((state.totalCorrect / state.totalAnswered) * 100) 
+            : 0;
+        statsEl.innerHTML = `
+            <div class="stat-row"><span>全問題数</span><span class="stat-value">${totalQ}問</span></div>
+            <div class="stat-row"><span>累計回答数</span><span class="stat-value">${state.totalAnswered}回</span></div>
+            <div class="stat-row"><span>累計正答率</span><span class="stat-value">${rate}%</span></div>
+            <div class="stat-row"><span>間違えた問題</span><span class="stat-value">${state.allWrongIds ? state.allWrongIds.length : 0}問</span></div>
+        `;
+    } else {
+        statsEl.innerHTML = `
+            <div class="stat-row"><span>全問題数</span><span class="stat-value">${totalQ}問</span></div>
+            <div class="stat-row"><span>学習を始めましょう！</span><span class="stat-value">📚</span></div>
+        `;
+    }
+
+    // レジュームボタンの表示
+    if (state && state.currentIndex > 0 && state.questionIds && state.currentIndex < state.questionIds.length) {
+        btnResume.style.display = 'flex';
+        btnResume.querySelector('.btn-icon').nextSibling.textContent = 
+            ` 前回の続きから (${state.currentIndex + 1}/${state.questionIds.length})`;
+    } else {
+        btnResume.style.display = 'none';
+    }
+
+    // 間違えた問題ボタン
+    const wrongList = state ? (state.allWrongIds || []) : [];
+    if (wrongList.length > 0) {
+        btnWrong.style.display = 'flex';
+        btnReset.style.display = 'flex';
+    } else {
+        btnWrong.style.display = 'none';
+        btnReset.style.display = state && state.totalAnswered > 0 ? 'flex' : 'none';
+    }
+}
+
+// ===== クイズ開始 =====
+function startQuiz(mode) {
+    quizMode = mode;
+    correctCount = 0;
+    wrongIds = [];
+    currentIndex = 0;
+
+    if (mode === 'resume') {
+        const state = loadState();
+        if (state && state.questionIds) {
+            currentQuestions = state.questionIds.map(id => allQuestions.find(q => q.id === id)).filter(Boolean);
+            currentIndex = state.currentIndex || 0;
+            correctCount = state.correctCount || 0;
+            wrongIds = state.wrongIds || [];
+        } else {
+            currentQuestions = shuffleArray([...allQuestions]);
+        }
+    } else if (mode === 'wrong') {
+        const allWrong = getAllWrongIds();
+        currentQuestions = allWrong.map(id => allQuestions.find(q => q.id === id)).filter(Boolean);
+        if (currentQuestions.length === 0) {
+            alert('間違えた問題がありません！');
+            return;
+        }
+        currentQuestions = shuffleArray(currentQuestions);
+    } else {
+        currentQuestions = shuffleArray([...allQuestions]);
+    }
+
+    showScreen('screen-quiz');
+    showQuestion();
+}
+
+// ===== 画面遷移 =====
+function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+    window.scrollTo(0, 0);
+}
+
+function goHome() {
+    showScreen('screen-start');
+    updateStartScreen();
+}
+
+// ===== 問題表示 =====
+function showQuestion() {
+    if (currentIndex >= currentQuestions.length) {
+        showResult();
+        return;
+    }
+
+    answered = false;
+    const q = currentQuestions[currentIndex];
+    
+    // プログレス更新
+    document.getElementById('progress-text').textContent = `${currentIndex + 1} / ${currentQuestions.length}`;
+    document.getElementById('score-text').textContent = `正解: ${correctCount}`;
+    document.getElementById('progress-bar').style.width = `${((currentIndex) / currentQuestions.length) * 100}%`;
+
+    // バッジ
+    const badge = document.getElementById('question-badge');
+    if (q.type === 'exam') {
+        badge.textContent = '試験問題例';
+        badge.style.color = 'var(--accent-amber)';
+        badge.style.background = 'rgba(245, 158, 11, 0.12)';
+    } else if (q.type === 'check') {
+        badge.textContent = 'Check!';
+        badge.style.color = 'var(--accent-green)';
+        badge.style.background = 'rgba(16, 185, 129, 0.12)';
+    } else {
+        badge.textContent = q.chapter;
+        badge.style.color = 'var(--accent-blue)';
+        badge.style.background = 'rgba(59, 130, 246, 0.12)';
+    }
+
+    // 問題文
+    document.getElementById('question-text').textContent = q.question;
+
+    // 選択肢
+    const labels = ['A', 'B', 'C', 'D'];
+    const container = document.getElementById('options-container');
+    container.innerHTML = '';
+    q.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.innerHTML = `
+            <span class="option-label">${labels[idx]}</span>
+            <span class="option-text">${opt}</span>
+        `;
+        btn.addEventListener('click', () => selectAnswer(idx));
+        container.appendChild(btn);
+    });
+
+    // 解説・次へボタンを隠す
+    document.getElementById('explanation-card').style.display = 'none';
+    document.getElementById('btn-next').style.display = 'none';
+}
+
+// ===== 回答選択 =====
+function selectAnswer(selectedIdx) {
+    if (answered) return;
+    answered = true;
+
+    const q = currentQuestions[currentIndex];
+    const isCorrect = selectedIdx === q.answer;
+    const buttons = document.querySelectorAll('.option-btn');
+
+    // 全ボタンを回答済みにする
+    buttons.forEach((btn, idx) => {
+        btn.classList.add('answered');
+        if (idx === q.answer) {
+            btn.classList.add('correct');
+        } else if (idx === selectedIdx && !isCorrect) {
+            btn.classList.add('wrong');
+        } else {
+            btn.classList.add('dimmed');
+        }
+    });
+
+    // カウント更新
+    if (isCorrect) {
+        correctCount++;
+        // 正解した場合、allWrongIdsから削除
+        const state = loadState();
+        if (state && state.allWrongIds) {
+            state.allWrongIds = state.allWrongIds.filter(id => id !== q.id);
+            state.totalAnswered = (state.totalAnswered || 0) + 1;
+            state.totalCorrect = (state.totalCorrect || 0) + 1;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
+    } else {
+        wrongIds.push(q.id);
+        // 不正解をallWrongIdsに追加
+        const state = loadState() || {};
+        const allWrong = state.allWrongIds || [];
+        if (!allWrong.includes(q.id)) {
+            allWrong.push(q.id);
+        }
+        state.allWrongIds = allWrong;
+        state.totalAnswered = (state.totalAnswered || 0) + 1;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    document.getElementById('score-text').textContent = `正解: ${correctCount}`;
+
+    // 解説表示
+    const explCard = document.getElementById('explanation-card');
+    const explHeader = document.getElementById('explanation-header');
+    const explText = document.getElementById('explanation-text');
+
+    explHeader.textContent = isCorrect ? '✅ 正解！' : '❌ 不正解';
+    explHeader.className = `explanation-header ${isCorrect ? 'correct-header' : 'wrong-header'}`;
+    explText.textContent = q.explanation;
+    explCard.style.display = 'block';
+
+    // 次へボタン表示
+    const btnNext = document.getElementById('btn-next');
+    if (currentIndex < currentQuestions.length - 1) {
+        btnNext.textContent = '次の問題へ →';
+    } else {
+        btnNext.textContent = '結果を見る 🎯';
+    }
+    btnNext.style.display = 'flex';
+
+    // 進捗保存
+    saveProgressState();
+
+    // 解説が見えるようにスクロール
+    setTimeout(() => {
+        explCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
+}
+
+function saveProgressState() {
+    const state = loadState() || {};
+    state.quizMode = quizMode;
+    state.currentIndex = currentIndex + 1; // 次の問題のインデックスを保存
+    state.correctCount = correctCount;
+    state.wrongIds = wrongIds;
+    state.questionIds = currentQuestions.map(q => q.id);
+    state.totalAnswered = state.totalAnswered || 0;
+    state.totalCorrect = state.totalCorrect || 0;
+    state.allWrongIds = state.allWrongIds || [];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+// ===== 次の問題 =====
+function nextQuestion() {
+    currentIndex++;
+    if (currentIndex >= currentQuestions.length) {
+        showResult();
+    } else {
+        showQuestion();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
+
+// ===== 結果画面 =====
+function showResult() {
+    const total = currentQuestions.length;
+    const rate = Math.round((correctCount / total) * 100);
+
+    let icon, title;
+    if (rate >= 90) { icon = '🏆'; title = '素晴らしい！'; }
+    else if (rate >= 70) { icon = '🎉'; title = 'よくできました！'; }
+    else if (rate >= 50) { icon = '💪'; title = 'もう少し！'; }
+    else { icon = '📖'; title = '復習しましょう！'; }
+
+    document.getElementById('result-icon').textContent = icon;
+    document.getElementById('result-title').textContent = title;
+    document.getElementById('result-score').textContent = `${rate}%`;
+    document.getElementById('result-details').innerHTML = `
+        ${correctCount} / ${total} 問正解<br>
+        間違えた問題: ${wrongIds.length}問
+    `;
+
+    // 間違えた問題がない場合、復習ボタンを隠す
+    const resultBtns = document.querySelector('.result-buttons');
+    const wrongBtn = resultBtns.querySelector('button:first-child');
+    wrongBtn.style.display = wrongIds.length > 0 ? 'flex' : 'none';
+
+    // レジューム状態をクリア（完了したので）
+    const state = loadState() || {};
+    state.currentIndex = 0;
+    state.questionIds = null;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+
+    showScreen('screen-result');
+}
+
+// ===== ユーティリティ =====
+function shuffleArray(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+</script>
+</body>
+</html>

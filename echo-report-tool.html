@@ -57,7 +57,10 @@ body{font-family:'Zen Maru Gothic','Yu Gothic UI','Hiragino Sans','Meiryo',sans-
 .btns button{flex:1;border:none;border-radius:7px;padding:9px;font-size:13px;font-weight:700;cursor:pointer}
 .b-copy{background:#F0913B;color:#fff}.b-reset{background:#fff;color:#777;border:1px solid #cbd5e1}
 .hint{font-size:11px;color:#94a3b8;margin-top:8px;line-height:1.5}
+  .b-pdf{background:#2b6cb0;color:#fff;border:none;border-radius:8px;padding:10px 16px;font-weight:bold;cursor:pointer;font-size:14px;}
+  .b-pdf:hover{background:#255e9c;}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 <div class="header">
@@ -67,6 +70,10 @@ body{font-family:'Zen Maru Gothic','Yu Gothic UI','Hiragino Sans','Meiryo',sans-
 
 <div class="wrap">
   <div>
+    <div class="modline">
+      <label>ID:</label><input id="pid" placeholder="123456" style="width:130px">
+      <label>名前:</label><input id="pname" placeholder="山田 太郎" style="width:170px">
+    </div>
     <div class="modline">
       <label>検査種別:</label><input id="kind" placeholder="腹部超音波" style="width:150px">
       <label>日付:</label><input id="date" type="date">
@@ -91,6 +98,7 @@ body{font-family:'Zen Maru Gothic','Yu Gothic UI','Hiragino Sans','Meiryo',sans-
       <textarea id="out" placeholder="チップを押すと所見が組み上がります。"></textarea>
       <div class="btns">
         <button class="b-copy" onclick="copyOut()">📋 コピー</button>
+        <button class="b-pdf" onclick="makePDF()">📄 PDF</button>
         <button class="b-reset" onclick="resetAll()">クリア</button>
       </div>
       <div class="hint">触れた部位だけ出力。サイズ・左右・S区域などは各部位の補足欄か本文を直接編集。チップ文言は腹部超音波検診判定マニュアル等を参考にした叩き台です（要望で調整可）。</div>
@@ -255,24 +263,24 @@ function autoEval(){
       var col=(iv!=null&&e>0)?((e-iv)/e):null;
       if(e<=21&&col!=null&&col>0.5)rap=3; else if(e>21&&col!=null&&col<0.5)rap=15; else rap=8;
     }
-    if(rap!=null)a.push('推定PASP ≈ '+(meas['TRPG']+rap)+' mmHg（TRPG'+meas['TRPG']+'＋推定RAP'+rap+'）');
+    if(rap!=null)a.push({g:'heart',t:'推定PASP ≈ '+(meas['TRPG']+rap)+' mmHg（TRPG'+meas['TRPG']+'＋推定RAP'+rap+'）'});
   }
   var asg=null;
   if(meas['AV Vmax']!=null){var v=meas['AV Vmax'];asg=(v<2.5?'大動脈弁硬化':v<3?'AS 軽度':v<4?'AS 中等度':v<5?'AS 高度':'AS 超高度');}
   else if(meas['AV平均PG']!=null){var p=meas['AV平均PG'];asg=(p<20?'AS 軽度':p<40?'AS 中等度':p<60?'AS 高度':'AS 超高度');}
   else if(meas['AVA']!=null){var av=meas['AVA'];asg=(av>1.5?'AS 軽度':av>=1?'AS 中等度':av>0.6?'AS 高度':'AS 超高度');}
-  if(asg)a.push('AS重症度 ≈ '+asg);
+  if(asg)a.push({g:'heart',t:'AS重症度 ≈ '+asg});
   var tot=0,pos=0;
   if(meas['E/e′']!=null){tot++;if(meas['E/e′']>14)pos++;}
   if(meas['e′中隔']!=null||meas['e′側壁']!=null){tot++;var eb=false;if(meas['e′中隔']!=null&&meas['e′中隔']<7)eb=true;if(meas['e′側壁']!=null&&meas['e′側壁']<10)eb=true;if(eb)pos++;}
   if(meas['LAVi']!=null){tot++;if(meas['LAVi']>34)pos++;}
   if(meas['TRPG']!=null){tot++;if(Math.sqrt(meas['TRPG']/4)>2.8)pos++;}
-  if(tot>=3){var r=pos/tot;a.push('拡張能 '+(r>0.5?'異常（左房圧上昇示唆）':(r===0.5?'判定保留':'正常'))+'（'+pos+'/'+tot+'陽性）');}
+  if(tot>=3){var r=pos/tot;a.push({g:'heart',t:'拡張能 '+(r>0.5?'異常（左房圧上昇示唆）':(r===0.5?'判定保留':'正常'))+'（'+pos+'/'+tot+'陽性）'});}
   ['右','左'].forEach(function(s){
     var psv=meas['ICA-PSV('+s+')'],pc=meas['%狭窄('+s+')'],g=null;
     if(psv!=null){g=(psv>230?'≥70%（高度）':psv>125?'50-69%（中等度）':'<50%');}
     else if(pc!=null){g=(pc>=70?'≥70%（高度）':pc>=50?'50-69%（中等度）':'<50%');}
-    if(g)a.push('頸動脈狭窄('+s+') ≈ '+g);
+    if(g)a.push({g:'neck',t:'頸動脈狭窄('+s+') ≈ '+g});
   });
   return a;
 }
@@ -309,24 +317,49 @@ function showSet(key){
   if(KIND_MAP[key]){document.getElementById('kind').value=KIND_MAP[key];render();}
 }
 
+var GROUP_LABEL={abd:'腹部エコー',neck:'頚部エコー',chest:'胸部エコー',heart:'心エコー',soft:'体表・軟部エコー'};
+var GROUP_ORDER=['abd','neck','chest','heart','soft'];
 function render(){
-  var lines=[],kind=document.getElementById('kind').value.trim(),date=document.getElementById('date').value,clin=document.getElementById('clin').value.trim(),imp=document.getElementById('imp').value.trim();
+  var kind=document.getElementById('kind').value.trim(),date=document.getElementById('date').value,clin=document.getElementById('clin').value.trim(),imp=document.getElementById('imp').value.trim();
+  var lines=[];
   var head=(kind||'超音波検査')+' 所見';if(date)head+=' ('+date+')';
   lines.push(head);
   if(clin)lines.push('【目的・臨床情報】'+clin);
-  var ml=[];MEASURES.forEach(function(m){if(meas[m.k]!=null)ml.push(m.k+' '+(m.dec?meas[m.k].toFixed(1):meas[m.k])+(m.u||''));});
-  if(ml.length)lines.push('【計測】'+ml.join(' / '));
+
+  // グループごとに：計測 → 自動評価 → 各部位所見 をまとめる
   var auto=autoEval();
-  auto.forEach(function(x){lines.push('【自動】'+x);});
-  lines.push('');
-  var any=ml.length>0||auto.length>0;
-  REGIONS.forEach(function(r){
-    var items=Array.from(sel[r.n]),f=(ft[r.n]||'').trim();
-    if(items.length===0&&!f)return;
-    any=true;
-    var body=items.join('、');if(f)body+=(body?' ／ ':'')+f;
-    lines.push('■'+r.n+'：'+body);
+  var any=false;
+
+  GROUP_ORDER.forEach(function(g){
+    var block=[];
+    // 計測（このグループの計測項目のみ）
+    var ml=[];
+    MEASURES.forEach(function(m){
+      if(meas[m.k]==null)return;
+      if((m.g||'heart')!==g)return;
+      ml.push(m.k+' '+(m.dec?meas[m.k].toFixed(1):meas[m.k])+(m.u||''));
+    });
+    if(ml.length)block.push('【計測】'+ml.join(' / '));
+    // 自動評価（このグループに属するもの）
+    auto.forEach(function(x){
+      if((x.g||'heart')===g)block.push('【自動】'+x.t);
+    });
+    // 各部位の所見
+    REGIONS.forEach(function(r){
+      if((r.g||'abd')!==g)return;
+      var items=Array.from(sel[r.n]),f=(ft[r.n]||'').trim();
+      if(items.length===0&&!f)return;
+      var body=items.join('、');if(f)body+=(body?' ／ ':'')+f;
+      block.push('■'+r.n+'：'+body);
+    });
+    if(block.length){
+      any=true;
+      lines.push('');
+      lines.push('《'+GROUP_LABEL[g]+'》');
+      block.forEach(function(l){lines.push(l);});
+    }
   });
+
   if(imp){lines.push('');lines.push('【インプレッション】');lines.push(imp);}
   if(!any&&!imp){document.getElementById('out').value='';return;}
   document.getElementById('out').value=lines.join('\n');
@@ -342,6 +375,53 @@ function resetAll(){
   document.querySelectorAll('.ftext').forEach(function(i){i.value='';});
   REGIONS.forEach(function(r){sel[r.n]=new Set();ft[r.n]='';});
   document.getElementById('imp').value='';document.getElementById('out').value='';
+}
+function esc2(s){return String(s||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function makePDF(){
+  var pid=document.getElementById('pid').value.trim();
+  var pname=document.getElementById('pname').value.trim();
+  var kind=document.getElementById('kind').value.trim()||'超音波検査';
+  var date=document.getElementById('date').value||'';
+  var out=document.getElementById('out').value;
+  if(!out.trim()){alert('レポートが空です。所見を入力してから PDF を作成してください。');return;}
+  var el=document.createElement('div');
+  el.style.cssText='font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;color:#222;width:180mm;background:#fff;';
+  el.innerHTML=
+    '<div style="border-bottom:3px solid #2b6cb0;padding-bottom:8px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:baseline;">'
+    +'<div style="font-size:20px;font-weight:bold;">超音波検査レポート</div>'
+    +'<div style="font-size:12px;color:#555;">はら内科医院</div></div>'
+    +'<table style="font-size:13px;border-collapse:collapse;margin-bottom:12px;">'
+    +'<tr><td style="padding:2px 12px 2px 0;color:#555;">検査日</td><td style="font-weight:bold;">'+esc2(date)+'</td>'
+    +'<td style="padding:2px 12px 2px 28px;color:#555;">検査種別</td><td style="font-weight:bold;">'+esc2(kind)+'</td></tr>'
+    +'<tr><td style="padding:2px 12px 2px 0;color:#555;">ID</td><td style="font-weight:bold;">'+esc2(pid)+'</td>'
+    +'<td style="padding:2px 12px 2px 28px;color:#555;">氏名</td><td style="font-weight:bold;">'+esc2(pname)+'</td></tr>'
+    +'</table>'
+    +out.split(/\n/).map(function(line){
+        var t=esc2(line);
+        if(/^《.*》$/.test(line)){
+          return '<div style="font-size:14px;font-weight:bold;color:#2b6cb0;margin-top:10px;margin-bottom:2px;border-left:4px solid #2b6cb0;padding-left:8px;">'+t+'</div>';
+        }
+        return '<div style="font-size:12.5px;line-height:1.9;white-space:pre-wrap;word-break:break-all;padding:0 2px;">'+(t||'&nbsp;')+'</div>';
+      }).join('');
+  // 画面上（見えない位置）に一旦配置してから描画：座標ズレ対策
+  var holder=document.createElement('div');
+  holder.style.cssText='position:fixed;left:0;top:0;width:190mm;background:#fff;z-index:-9999;opacity:1;pointer-events:none;';
+  holder.appendChild(el);
+  document.body.appendChild(holder);
+  var fname='エコーレポート_'+(date||'日付なし')+(pid?'_'+pid:'')+'.pdf';
+  var btn=document.querySelector('.b-pdf');var orig=btn.textContent;btn.textContent='作成中…';btn.disabled=true;
+  window.scrollTo(0,0);
+  html2pdf().set({
+      margin:[12,15,15,15],
+      filename:fname,
+      image:{type:'jpeg',quality:0.95},
+      html2canvas:{scale:2,scrollY:0,scrollX:0,windowWidth:document.documentElement.offsetWidth},
+      jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
+      pagebreak:{mode:['css','legacy']}
+    })
+    .from(el).save()
+    .then(function(){btn.textContent=orig;btn.disabled=false;document.body.removeChild(holder);})
+    .catch(function(){btn.textContent=orig;btn.disabled=false;if(holder.parentNode)document.body.removeChild(holder);alert('PDF作成に失敗しました。通信環境をご確認ください。');});
 }
 function copyOut(){var txt=document.getElementById('out').value;var done=function(){var b=document.querySelector('.b-copy'),o=b.textContent;b.textContent='コピー済 ✓';setTimeout(function(){b.textContent=o;},1400);};function fb(){try{var ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);done();}catch(e){alert('コピーに失敗しました。本文を選択して手動でコピーしてください。');}}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done).catch(fb);}else{fb();}}
 

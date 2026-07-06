@@ -77,6 +77,13 @@
   .seg label:has(input:focus-visible){outline:3px solid var(--orange);outline-offset:2px;}
   .seg-note{font-size:.72rem;color:var(--brown-soft);margin-top:5px;}
 
+  .calc-btn{
+    display:block;width:100%;font-family:inherit;font-size:1.02rem;font-weight:900;
+    color:#fff;background:var(--teal);border:none;border-radius:14px;
+    padding:14px;min-height:52px;cursor:pointer;letter-spacing:.06em;
+    box-shadow:0 3px 10px rgba(60,184,120,.3);margin:4px 0 14px;
+  }
+  .calc-btn:active{transform:scale(.985);}
   .error{display:none;color:var(--red);font-size:.8rem;font-weight:700;margin-bottom:12px;}
   .error.show{display:block;}
 
@@ -187,13 +194,15 @@
 
     <div class="field">
       <label class="field-label" for="onsetDate">発症日（発熱・症状が出た日）</label>
-      <input type="date" id="onsetDate" onchange="calc()">
+      <input type="date" id="onsetDate" onchange="calc()" oninput="calc()">
     </div>
 
     <div class="field">
       <label class="field-label" for="recoverDate">解熱日（熱が下がった日）<small>　まだなら空欄でOK（最短の見込みで計算します）</small></label>
-      <input type="date" id="recoverDate" onchange="calc()">
+      <input type="date" id="recoverDate" onchange="calc()" oninput="calc()">
     </div>
+
+    <button type="button" class="calc-btn" onclick="calc(true)">登校開始日を計算する</button>
 
     <div class="error" id="errMsg"></div>
 
@@ -249,7 +258,7 @@ function sameDay(a,b){
   return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
 }
 
-function calc(){
+function calc(fromButton){
   const onsetVal = document.getElementById('onsetDate').value;
   const recoverVal = document.getElementById('recoverDate').value;
   const result = document.getElementById('result');
@@ -257,7 +266,13 @@ function calc(){
   err.classList.remove('show');
   result.classList.remove('show');
 
-  if(!onsetVal) return;
+  if(!onsetVal){
+    if(fromButton === true){
+      err.textContent = '発症日が入力されていません。日付の欄をタップし、カレンダーで日付を選んでから「完了」を押してください（表示されているだけでは入力されていない場合があります）。';
+      err.classList.add('show');
+    }
+    return;
+  }
 
   const onset = new Date(onsetVal + 'T00:00:00');
   let recover = recoverVal ? new Date(recoverVal + 'T00:00:00') : null;

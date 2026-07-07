@@ -57,7 +57,7 @@
     .panel{border:none;padding:0;page-break-inside:avoid}
     #chart svg{max-height:118mm;width:auto;max-width:100%;margin:0 auto}
     .clinic{margin-bottom:2px}
-    #printSummary{display:block;margin-top:4px;font-size:10.5px;line-height:1.55;columns:2;column-gap:8mm}
+    #printSummary{display:block;margin-top:4px;font-size:10.5px;line-height:1.6}
     #printSummary h3{font-size:11.5px;color:#3a7d22;margin:3px 0 1px;border-bottom:1px solid #ccc;break-after:avoid}
     #printSummary p{margin:2px 0}
   }
@@ -363,7 +363,7 @@ document.getElementById('printBtn').onclick=()=>{
       const sl=r.reg.slope;
       h+=`<p>傾き ${i+1}（${fmtD(r.s)} 〜 ${fmtD(r.e)}）：この期間、eGFRは1年あたり約 ${Math.abs(sl).toFixed(1)} ${sl<0?'低下':'上昇'}しています。赤い線はこのペースが続いた場合の見込みです。</p>`;
     });
-    h+='<p>腎機能の低下をゆるやかにするには、血圧・塩分・血糖の管理、薬の継続、定期的な検査が大切です。経過は治療によって変わりますので、一緒に取り組んでいきましょう。</p>';
+    h+='<p style="margin-top:14px">腎機能の低下をゆるやかにするには、血圧・塩分・血糖の管理、薬の継続、定期的な検査が大切です。経過は治療によって変わりますので、一緒に取り組んでいきましょう。</p>';
   }
   const n=new Date();
   h+=`<p style="text-align:right">はら内科医院　${n.getFullYear()}年${n.getMonth()+1}月${n.getDate()}日</p>`;

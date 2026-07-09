@@ -683,7 +683,7 @@ function renderBGroups(groups,scope,cmp){
         h+=`<div class="row brow ${it.got?'got':''}">
           <span class="tcheck" onclick="event.stopPropagation();toggleBGot('${scope}','${g.id}','${m.id}','${it.id}')">${it.got?'✓':''}</span>
           <span class="r-name ${it.got?'got-text':''}" onclick="editBItem('${scope}','${g.id}','${m.id}','${it.id}')">${esc(it.name)}${it.sub?`<span class="sub">${esc(it.sub)}</span>`:''}${meta||docBtn?`<span class="ometa-wrap">${meta}${docBtn}</span>`:''}</span>
-          ${it.status?`<span class="status ${it.status}">${it.status==='fixed'?'確定':'暫定'}</span>`:''}
+          <span class="status ${it.status||'tmp'}">${(it.status||'tmp')==='fixed'?'確定':'暫定'}</span>
           <span class="price" onclick="editBItem('${scope}','${g.id}','${m.id}','${it.id}')">${priceHtml}</span>
           ${memoBtn}
         </div>
@@ -742,6 +742,7 @@ function bItemModal(scope,gid,mid,iid){
      <div class="field"><label>品名</label><input id="f-n" value="${esc(it.name)}"></div>
      <div class="field"><label>補足</label><input id="f-s" value="${esc(it.sub||'')}"></div>
      <div class="field"><label>月額（円）</label><input id="f-w" type="number" inputmode="numeric" value="${it.now}"></div>
+     <div class="field"><label>状態</label><select id="f-st"><option value="tmp" ${it.status==='tmp'?'selected':''}>暫定</option><option value="fixed" ${it.status==='fixed'?'selected':''}>確定</option></select></div>
      <div class="modal-btns">
        ${iid?`<button class="mb-del" onclick="m_.items.splice(m_.items.indexOf(it_),1);save();rerender('${scope}');closeModal()">削除</button>`:''}
        <button class="mb-cancel" onclick="closeModal()">やめる</button>

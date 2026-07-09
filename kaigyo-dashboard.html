@@ -608,7 +608,7 @@ function renderBudget(){
   const runNow=budgetTotals(D.running,'now');
   h+=`<div class="run-wrap"><div class="run-title">📅 ランニングコスト（月額）<span class="run-total num">合計 ${yen(runNow)}／月</span></div>
     <div style="font-size:11.5px;color:var(--sub);margin:2px 2px 10px">初期費用とは別に、毎月かかる費用です。</div>`;
-  h+=renderBGroups(D.running,'running',true);
+  h+=renderBGroups(D.running,'running',false);
   h+=`</div>`;
   el.innerHTML=h;
 }
@@ -737,20 +737,32 @@ function editBItem(scope,gid,mid,iid){bItemModal(scope,gid,mid,iid);}
 function bItemModal(scope,gid,mid,iid){
   const{m,it}=iid?findItem(scope,gid,mid,iid):{m:null,it:{name:"",sub:"",est:"",now:"",status:"tmp",orderDate:"",contractDate:"",memo:"",got:false}};
   const isRun=scope==='running';
+  if(isRun){
+    openModal(`<h3>${iid?'月額費用を編集':'月額費用を追加'}</h3>
+     <div class="field"><label>品名</label><input id="f-n" value="${esc(it.name)}"></div>
+     <div class="field"><label>補足</label><input id="f-s" value="${esc(it.sub||'')}"></div>
+     <div class="field"><label>月額（円）</label><input id="f-w" type="number" inputmode="numeric" value="${it.now}"></div>
+     <div class="modal-btns">
+       ${iid?`<button class="mb-del" onclick="m_.items.splice(m_.items.indexOf(it_),1);save();rerender('${scope}');closeModal()">削除</button>`:''}
+       <button class="mb-cancel" onclick="closeModal()">やめる</button>
+       <button class="mb-ok" onclick="saveBItem('${scope}','${gid}','${mid}','${iid||''}')">保存</button></div>`);
+    window.m_=m;window.it_=it;
+    return;
+  }
   openModal(`<h3>${iid?'項目を編集':'項目を追加'}</h3>
    <div class="field"><label>品名</label><input id="f-n" value="${esc(it.name)}"></div>
    <div class="field"><label>メーカー・補足</label><input id="f-s" value="${esc(it.sub||'')}"></div>
    <div class="field-row">
-     <div class="field"><label>${isRun?'月額（当初）':'見積額（当初）'}</label><input id="f-e" type="number" inputmode="numeric" value="${it.est}"></div>
-     <div class="field"><label>${isRun?'月額（現在）':'現在額'}</label><input id="f-w" type="number" inputmode="numeric" value="${it.now}"></div>
+     <div class="field"><label>見積額（当初）</label><input id="f-e" type="number" inputmode="numeric" value="${it.est}"></div>
+     <div class="field"><label>現在額</label><input id="f-w" type="number" inputmode="numeric" value="${it.now}"></div>
    </div>
    <div class="field"><label>状態</label><select id="f-st"><option value="tmp" ${it.status==='tmp'?'selected':''}>暫定</option><option value="fixed" ${it.status==='fixed'?'selected':''}>確定</option></select></div>
-   ${isRun?'':`<div class="field-row">
+   <div class="field-row">
      <div class="field"><label>発注日（任意）</label><input id="f-od" type="date" value="${it.orderDate||''}"></div>
      <div class="field"><label>契約日（任意）</label><input id="f-cd" type="date" value="${it.contractDate||''}"></div>
    </div>
    <div class="field"><label>📎 契約書リンク（Google Drive等のURL）</label><input id="f-doc" value="${esc(it.docUrl||'')}" placeholder="https://drive.google.com/..."></div>
-   <div class="field"><label>メモ（候補・URL・発注先など）</label><textarea id="f-m" placeholder="候補品やURLを貼れます。URLは自動でリンクになります。">${esc(it.memo||'')}</textarea></div>`}
+   <div class="field"><label>メモ（候補・URL・発注先など）</label><textarea id="f-m" placeholder="候補品やURLを貼れます。URLは自動でリンクになります。">${esc(it.memo||'')}</textarea></div>
    <div class="modal-btns">
      ${iid?`<button class="mb-del" onclick="m_.items.splice(m_.items.indexOf(it_),1);save();rerender('${scope}');closeModal()">削除</button>`:''}
      <button class="mb-cancel" onclick="closeModal()">やめる</button>
@@ -760,7 +772,8 @@ function bItemModal(scope,gid,mid,iid){
 function saveBItem(scope,gid,mid,iid){
   const name=val('f-n');if(!name){closeModal();return;}
   const isRun=scope==='running';
-  const obj={name,sub:val('f-s'),est:Number(val('f-e'))||0,now:Number(val('f-w'))||0,status:document.getElementById('f-st').value};
+  const stEl=document.getElementById('f-st');
+  const obj={name,sub:val('f-s'),est:Number(val('f-e'))||0,now:Number(val('f-w'))||0,status:stEl?stEl.value:'fixed'};
   if(!isRun){
     obj.orderDate=val('f-od');obj.contractDate=val('f-cd');
     obj.docUrl=val('f-doc');

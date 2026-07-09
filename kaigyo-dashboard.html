@@ -127,6 +127,8 @@ input,textarea,select{font-family:inherit}
 .price .diff{font-size:11px;font-weight:700;margin-left:5px}
 .diff.up{color:var(--danger)}
 .diff.down{color:var(--green)}
+.diff.plan-up{color:var(--blue)}
+.diff.plan-down{color:var(--teal)}
 .status{font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;white-space:nowrap}
 .status.fixed{background:var(--green-soft);color:#2c7d4f}
 .status.tmp{background:var(--orange-soft);color:#b56a1c}
@@ -150,7 +152,7 @@ input,textarea,select{font-family:inherit}
 .bcard.under .val{color:var(--green)}
 .run-wrap{margin-top:18px;border-top:2px dashed var(--line);padding-top:16px}
 .run-title{font-size:14px;font-weight:900;display:flex;align-items:center;gap:7px;margin-bottom:4px}
-.run-total{margin-left:auto;color:var(--teal)}
+.run-total{margin-left:auto;color:#8B5FBF;background:#F1EAF9;padding:3px 12px;border-radius:99px;font-weight:900}
 
 /* カレンダー */
 .cal-item{display:flex;gap:11px;padding:11px 2px;border-bottom:1px solid var(--line)}
@@ -579,17 +581,29 @@ function sumItems(items,field){return items.reduce((s,i)=>s+(Number(i[field])||0
 function budgetTotals(groups,field){let s=0;groups.forEach(g=>g.mids.forEach(m=>s+=sumItems(m.items,field)));return s;}
 function renderBudget(){
   const el=document.getElementById('tab-budget');
-  const estTotal=budgetTotals(D.budget,'est');
-  const nowTotal=budgetTotals(D.budget,'now');
-  const planTotal=D.budget.reduce((s,g)=>s+(Number(g.plan)||0),0);
-  const diff=nowTotal-estTotal; // 見積→現在の増減（全小項目の増減の合計）
-  h=`<div class="panel-head"><h2>予算：見積 vs 現在</h2><button class="btn" onclick="addBGroup('budget')">＋ 大項目</button></div>`;
+  const nowTotal=budgetTotals(D.budget,'now'); // 現在の見込み総額（全項目の実額）
+  // 計画総額 = 「見積のある大項目」は見積合計、「計画枠のみの大項目」は計画枠、を足し合わせたもの（全部を含む）
+  let planTotal=0, estOnlyTotal=0, estOnlyNow=0;
+  D.budget.forEach(g=>{
+    const hasEst=g.mids.some(m=>m.items.some(i=>Number(i.est)>0));
+    const gEst=g.mids.reduce((s,m)=>s+sumItems(m.items,'est'),0);
+    const gNow=g.mids.reduce((s,m)=>s+sumItems(m.items,'now'),0);
+    if(hasEst){
+      planTotal+=gEst;
+      estOnlyTotal+=gEst; estOnlyNow+=gNow;
+    }else{
+      planTotal+=Number(g.plan)||gNow; // 見積のない大項目は計画枠を基準に（枠がなければ現在額をそのまま）
+    }
+  });
+  const diff=nowTotal-planTotal; // 全部込みの本当の差
+  const estDiff=estOnlyNow-estOnlyTotal; // 見積のある部分だけの差（参考）
+  h=`<div class="panel-head"><h2>予算：計画 vs 現在</h2><button class="btn" onclick="addBGroup('budget')">＋ 大項目</button></div>`;
   h+=`<div class="bsum">
-    <div class="bcard"><div class="lbl">見積合計</div><div class="val num">${man(estTotal)}</div></div>
+    <div class="bcard"><div class="lbl">計画総額</div><div class="val num">${man(planTotal)}</div></div>
     <div class="bcard"><div class="lbl">現在の見込み</div><div class="val num">${man(nowTotal)}</div></div>
-    <div class="bcard ${diff>0?'over':'under'}"><div class="lbl">見積との差</div><div class="val num">${diff===0?'±0':(diff>0?'+':'')+man(diff)}</div></div>
+    <div class="bcard ${diff>0?'over':'under'}"><div class="lbl">計画との差</div><div class="val num">${diff===0?'±0':(diff>0?'+':'')+man(diff)}</div></div>
   </div>`;
-  h+=`<div style="font-size:11.5px;color:var(--sub);margin:-6px 2px 12px">各項目の「見積→現在」の増減を積み上げた合計です。（税理士の資金計画総額の目安 ${man(planTotal)}）<br>金額はすべて税込。各項目をタップすると見積・現在を編集できます。</div>`;
+  h+=`<div style="font-size:11.5px;color:var(--sub);margin:-6px 2px 12px">計画総額＝公式見積のある項目（<span style="color:var(--orange-deep);font-weight:700">オレンジの差額</span>）の見積合計＋什器備品など計画枠のみの項目（<span style="color:var(--blue);font-weight:700">青の差額</span>）の枠を、すべて合算したものです。（参考：見積のある部分だけの差額 ${estDiff===0?'±0':(estDiff>0?'+':'')+man(estDiff)}）<br>金額はすべて税込。各項目をタップすると見積・現在を編集できます。</div>`;
   h+=renderBGroups(D.budget,'budget',true);
   const runNow=budgetTotals(D.running,'now');
   h+=`<div class="run-wrap"><div class="run-title">📅 ランニングコスト（月額）<span class="run-total num">合計 ${yen(runNow)}／月</span></div>
@@ -604,14 +618,22 @@ function renderBGroups(groups,scope,cmp){
     const gEst=g.mids.reduce((s,m)=>s+sumItems(m.items,'est'),0);
     const gNow=g.mids.reduce((s,m)=>s+sumItems(m.items,'now'),0);
     const plan=Number(g.plan)||0;
-    let anyInput=false;g.mids.forEach(m=>m.items.forEach(i=>{if(Number(i.now)>0||Number(i.est)>0)anyInput=true;}));
-    const gd=gNow-gEst; // 見積→現在の増減（案X：小項目の増減の合計）
+    const hasEst = g.mids.some(m=>m.items.some(i=>Number(i.est)>0)); // 公式見積のある項目が1つでもあるか
+    const anyInput = g.mids.some(m=>m.items.some(i=>Number(i.now)>0||Number(i.est)>0));
+    const gd=gNow-gEst;
     let sumHtml;
-    if(cmp && anyInput){
+    if(cmp && hasEst && anyInput){
+      // 見積のある大項目：見積→現在の増減を主軸に、計画枠は参考併記
       const planTag = plan?`<span style="font-size:10.5px;color:var(--sub);font-weight:500">計画枠 ${man(plan)}｜</span>`:'';
       sumHtml=`${planTag}<span class="num" style="color:var(--sub)">${man(gEst)}</span> → <span class="num">${man(gNow)}</span>${gd!==0?`<span class="diff ${gd>0?'up':'down'} num" style="margin-left:5px">${gd>0?'+':''}${man(gd)}</span>`:''}`;
     }else if(cmp && plan){
-      sumHtml=`<span class="num" style="color:var(--sub)">計画枠 ${man(plan)}</span> <span style="font-size:11px;color:var(--sub)">未入力</span>`;
+      // 見積のない大項目（什器備品など）：計画枠→現在のみ、未入力なら差額を出さない
+      if(!anyInput){
+        sumHtml=`<span class="num" style="color:var(--sub)">計画枠 ${man(plan)}</span> <span style="font-size:11px;color:var(--sub)">未入力</span>`;
+      }else{
+        const pd=gNow-plan;
+        sumHtml=`<span class="num" style="color:var(--sub)">計画枠${man(plan)}→</span><span class="num">${man(gNow)}</span>${pd!==0?`<span class="diff ${pd>0?'plan-up':'plan-down'} num" style="margin-left:5px">${pd>0?'+':''}${man(pd)}</span>`:''}`;
+      }
     }else{
       sumHtml=`<span class="num">${man(gNow)}</span>`;
     }
@@ -622,16 +644,32 @@ function renderBGroups(groups,scope,cmp){
       <div class="grp-body">`;
     g.mids.forEach(m=>{
       const mEst=sumItems(m.items,'est'), mNow=sumItems(m.items,'now');
-      const md=mNow-mEst;
-      const midSum = (cmp && md!==0)
-        ? `<span class="num" style="color:var(--sub);font-weight:500">${man(mEst)}→</span><span class="num">${man(mNow)}</span><span class="diff ${md>0?'up':'down'} num" style="margin-left:4px">${md>0?'+':''}${man(md)}</span>`
-        : `<span class="num">${man(mNow)}</span>`;
+      const mPlan=Number(m.plan)||0;
+      const mHasEst=m.items.some(i=>Number(i.est)>0);
+      const mAnyInput=m.items.some(i=>Number(i.now)>0||Number(i.est)>0);
+      let midSum;
+      if(cmp && mPlan && !mHasEst){
+        // 中項目に予定額はあるが公式見積がない：予定→現在のみ
+        if(!mAnyInput){
+          midSum=`<span class="num" style="color:var(--sub)">予定 ${man(mPlan)}</span> <span style="font-size:10.5px;color:var(--sub)">未入力</span>`;
+        }else{
+          const pd=mNow-mPlan;
+          midSum=`<span class="num" style="color:var(--sub)">予定${man(mPlan)}→</span><span class="num">${man(mNow)}</span>${pd!==0?`<span class="diff ${pd>0?'plan-up':'plan-down'} num" style="margin-left:4px">${pd>0?'+':''}${man(pd)}</span>`:''}`;
+        }
+      }else if(cmp && mHasEst){
+        const md=mNow-mEst;
+        midSum = md!==0
+          ? `<span class="num" style="color:var(--sub);font-weight:500">${man(mEst)}→</span><span class="num">${man(mNow)}</span><span class="diff ${md>0?'up':'down'} num" style="margin-left:4px">${md>0?'+':''}${man(md)}</span>`
+          : `<span class="num">${man(mNow)}</span>`;
+      }else{
+        midSum=`<span class="num">${man(mNow)}</span>`;
+      }
       h+=`<div class="mid"><div class="mid-head"><span ondblclick="renameMid('${scope}','${g.id}','${m.id}')">${esc(m.name)}</span><span class="m-sum">${midSum}</span></div>`;
       m.items.forEach(it=>{
         const est=Number(it.est)||0, now=Number(it.now)||0;
         const d=now-est;
         let priceHtml;
-        if(cmp && d!==0){
+        if(cmp && est>0 && d!==0){
           priceHtml=`<span class="price cmp num">${man(est)}→</span> <span class="num">${man(now)}</span><span class="diff ${d>0?'up':'down'} num">${d>0?'+':''}${man(d)}</span>`;
         }else{
           priceHtml=`<span class="num">${man(now)}</span>`;
@@ -676,16 +714,20 @@ function renameBGroup(scope,gid){const g=scopeArr(scope).find(x=>x.id===gid);
   window.g_=g;
 }
 function addMid(scope,gid){const g=scopeArr(scope).find(x=>x.id===gid);
+  const isBudget=scope==='budget';
   openModal(`<h3>中項目を追加</h3><div class="field"><label>名前</label><input id="f-n" placeholder="例）処置室"></div>
+   ${isBudget?`<div class="field"><label>この中項目の予定額（円・任意）</label><input id="f-p" type="number" inputmode="numeric" placeholder="例）3000000"></div>`:''}
    <div class="modal-btns"><button class="mb-cancel" onclick="closeModal()">やめる</button>
-   <button class="mb-ok" onclick="g_.mids.push({id:uid(),name:val('f-n')||'新中項目',items:[]});save();rerender('${scope}');closeModal()">追加</button></div>`);
+   <button class="mb-ok" onclick="g_.mids.push({id:uid(),name:val('f-n')||'新中項目',plan:${isBudget}?Number(val('f-p'))||0:0,items:[]});save();rerender('${scope}');closeModal()">追加</button></div>`);
   window.g_=g;
 }
 function renameMid(scope,gid,mid){const g=scopeArr(scope).find(x=>x.id===gid);const m=g.mids.find(x=>x.id===mid);
+  const isBudget=scope==='budget';
   openModal(`<h3>中項目を編集</h3><div class="field"><label>名前</label><input id="f-n" value="${esc(m.name)}"></div>
+   ${isBudget?`<div class="field"><label>この中項目の予定額（円）</label><input id="f-p" type="number" inputmode="numeric" value="${m.plan||0}"></div>`:''}
    <div class="modal-btns"><button class="mb-del" onclick="g_.mids.splice(g_.mids.indexOf(m_),1);save();rerender('${scope}');closeModal()">削除</button>
    <button class="mb-cancel" onclick="closeModal()">やめる</button>
-   <button class="mb-ok" onclick="m_.name=val('f-n');save();rerender('${scope}');closeModal()">保存</button></div>`);
+   <button class="mb-ok" onclick="m_.name=val('f-n');${isBudget?"m_.plan=Number(val('f-p'))||0;":""}save();rerender('${scope}');closeModal()">保存</button></div>`);
   window.g_=g;window.m_=m;
 }
 function toggleBGot(scope,gid,mid,iid){const{it}=findItem(scope,gid,mid,iid);it.got=!it.got;save();rerender(scope);}

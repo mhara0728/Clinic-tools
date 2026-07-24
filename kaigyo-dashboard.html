@@ -413,12 +413,22 @@ function setStatus(s){
 function uid(){return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 
 /* ============ 金額フォーマット ============ */
-function man(n){ // 円→「◯◯万」表記
+function man(n){ // 円→「◯◯万」表記（小額は小数第1位まで）
   if(n==null||isNaN(n))return "—";
   if(n===0)return "0";
-  const m=n/10000;
-  if(Math.abs(m)>=10000){const oku=Math.floor(Math.abs(m)/10000);const rest=Math.round(Math.abs(m)%10000);return (n<0?"-":"")+oku+"億"+(rest?(","+String(rest).padStart(4,'0').replace(/^0+/,'')+"万"):"");}
-  return (n<0?"-":"")+Math.round(Math.abs(m)).toLocaleString()+"万";
+  const sign=n<0?"-":"";
+  const a=Math.abs(n);
+  const m=a/10000;
+  if(m>=10000){ // 億単位
+    const oku=Math.floor(m/10000);const rest=Math.round(m%10000);
+    return sign+oku+"億"+(rest?(rest.toLocaleString()+"万"):"");
+  }
+  if(m>=100){ // 100万以上は整数表示
+    return sign+Math.round(m).toLocaleString()+"万";
+  }
+  // 100万未満は小数第1位まで（.0 は省略）
+  const r=Math.round(m*10)/10;
+  return sign+(Number.isInteger(r)?r:r.toFixed(1))+"万";
 }
 function yen(n){return "¥"+Math.round(n).toLocaleString();}
 

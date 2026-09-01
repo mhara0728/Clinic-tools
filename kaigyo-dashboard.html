@@ -97,6 +97,8 @@ input,textarea,select{font-family:inherit}
 .gantt-phasesep{border-top:2px solid var(--line)}
 .gantt-hint{font-size:11px;color:var(--sub);padding:8px 12px;background:var(--bg)}
 .gantt-open-line{position:absolute;top:0;bottom:0;width:2px;background:var(--danger);z-index:1}
+.gantt{position:relative}
+.gantt-today-line{position:absolute;top:0;bottom:0;width:2px;background:rgba(193,91,78,.5);z-index:3;pointer-events:none}
 @media(min-width:760px){ .gantt-wrap{display:block} .tl-note{display:block} }
 .tl-note{display:none;font-size:11.5px;color:var(--sub);margin:0 2px 14px}
 
@@ -166,6 +168,9 @@ input,textarea,select{font-family:inherit}
 .cal-actions{margin-top:5px;display:flex;gap:8px;align-items:center}
 .cal-gcal{font-size:11px;color:var(--green);font-weight:700;text-decoration:none;border:1.5px solid var(--green-soft);background:var(--green-soft);padding:3px 10px;border-radius:99px}
 .cal-x{border:none;background:none;color:#cdc6b7;font-size:14px}
+.cal-item.past{opacity:.5}
+.cal-item.past .cal-date{background:#EFECE3}
+.cal-divider{font-size:11px;font-weight:700;color:var(--sub);text-align:center;padding:12px 0 4px;border-top:1px dashed var(--line);margin-top:6px}
 
 /* モーダル */
 .modal-bg{position:fixed;inset:0;background:rgba(44,42,36,.5);display:none;align-items:flex-end;justify-content:center;z-index:100}
@@ -413,22 +418,12 @@ function setStatus(s){
 function uid(){return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 
 /* ============ 金額フォーマット ============ */
-function man(n){ // 円→「◯◯万」表記（小額は小数第1位まで）
+function man(n){ // 円→「◯◯万」表記
   if(n==null||isNaN(n))return "—";
   if(n===0)return "0";
-  const sign=n<0?"-":"";
-  const a=Math.abs(n);
-  const m=a/10000;
-  if(m>=10000){ // 億単位
-    const oku=Math.floor(m/10000);const rest=Math.round(m%10000);
-    return sign+oku+"億"+(rest?(rest.toLocaleString()+"万"):"");
-  }
-  if(m>=100){ // 100万以上は整数表示
-    return sign+Math.round(m).toLocaleString()+"万";
-  }
-  // 100万未満は小数第1位まで（.0 は省略）
-  const r=Math.round(m*10)/10;
-  return sign+(Number.isInteger(r)?r:r.toFixed(1))+"万";
+  const m=n/10000;
+  if(Math.abs(m)>=10000){const oku=Math.floor(Math.abs(m)/10000);const rest=Math.round(Math.abs(m)%10000);return (n<0?"-":"")+oku+"億"+(rest?(","+String(rest).padStart(4,'0').replace(/^0+/,'')+"万"):"");}
+  return (n<0?"-":"")+Math.round(Math.abs(m)).toLocaleString()+"万";
 }
 function yen(n){return "¥"+Math.round(n).toLocaleString();}
 
@@ -482,10 +477,25 @@ function buildMonths(){
   }
   return months;
 }
+function todayPct(months){
+  if(!months.length)return null;
+  const now=new Date();
+  const ym=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const idx=months.indexOf(ym);
+  if(idx<0)return null;
+  const daysInMonth=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  const frac=(now.getDate()-1)/Math.max(1,daysInMonth-1);
+  return ((idx+frac)/months.length)*100;
+}
+function sortedTasks(ph){
+  return [...ph.tasks].sort((a,b)=>(a.done===b.done?0:(a.done?1:-1)));
+}
 function renderGantt(){
   const months=buildMonths();
   if(!months.length)return '';
   const openYM=D.openDate.slice(0,7);
+  const tPct=todayPct(months);
+  const todayLine=()=>tPct==null?'':`<div class="gantt-today-line" style="left:${tPct}%" title="今日"></div>`;
   // ヘッダー
   let head=`<div class="gantt-row head"><div class="gantt-label">タスク</div><div class="gantt-cells">`;
   months.forEach(ym=>{
@@ -493,11 +503,11 @@ function renderGantt(){
     const isOpen=ym===openYM;
     head+=`<div class="gantt-cell ${isOpen?'q':''}" style="text-align:center;font-size:10px">${m}月<br><span style="color:var(--sub);font-weight:400">${y.slice(2)}</span></div>`;
   });
-  head+=`</div></div>`;
+  head+=`${todayLine()}</div></div>`;
   // 行
   let rows='';
   D.todo.forEach((ph,pi)=>{
-    ph.tasks.forEach(t=>{
+    sortedTasks(ph).forEach(t=>{
       const si=t.start?ymToIdx(t.start,months):-1;
       const ei=t.end?ymToIdx(t.end,months):si;
       let bar='';
@@ -512,12 +522,12 @@ function renderGantt(){
           <span class="gcheck" onclick="toggleTaskG('${ph.id}','${t.id}')">${t.done?'✓':''}</span>
           <span class="gname" title="${esc(t.name)}">${esc(t.name)}</span>
         </div>
-        <div class="gantt-cells">${cells}${bar}</div>
+        <div class="gantt-cells">${cells}${bar}${todayLine()}</div>
       </div>`;
     });
   });
   return `<div class="gantt-wrap"><div class="gantt-scroll"><div class="gantt">${head}${rows}</div></div>
-    <div class="gantt-hint">🎯 ${D.openDate} 開院　／　バーの色は時期フェーズに対応。チェックはリストと連動します。</div></div>`;
+    <div class="gantt-hint">🎯 ${D.openDate} 開院　／　薄い赤の線が今日の位置です。バーの色は時期フェーズに対応。チェックはリストと連動します。</div></div>`;
 }
 function toggleTaskG(pid,tid){const t=findTask(pid,tid);t.done=!t.done;save();renderTodo();}
 
@@ -533,7 +543,7 @@ function renderTodo(){
       <span class="phase-title">${esc(ph.title)}</span>
       <span class="phase-when">${esc(ph.when||'')}　${done}/${ph.tasks.length}</span></div>
       <div class="phase-line">`;
-    ph.tasks.forEach(t=>{
+    sortedTasks(ph).forEach(t=>{
       h+=`<div class="task ${t.done?'done':''}">
         <div class="check" onclick="toggleTask('${ph.id}','${t.id}')">${t.done?'✓':''}</div>
         <div class="task-body" onclick="editTask('${ph.id}','${t.id}')">
@@ -801,18 +811,25 @@ function saveBItem(scope,gid,mid,iid){
 function renderCal(){
   const el=document.getElementById('tab-cal');
   let h=`<div class="panel-head"><h2>打ち合わせ・予定</h2><button class="btn" onclick="addCal()">＋ 追加</button></div>`;
-  const sorted=[...D.cal].sort((a,b)=>(a.date||'9').localeCompare(b.date||'9'));
-  if(!sorted.length)h+=`<div class="empty">予定はまだありません。<br>「＋ 追加」から登録できます。</div>`;
-  sorted.forEach(c=>{
+  const todayStr=new Date().toISOString().slice(0,10);
+  const upcoming=D.cal.filter(c=>!c.date||c.date>=todayStr).sort((a,b)=>(a.date||'9').localeCompare(b.date||'9'));
+  const past=D.cal.filter(c=>c.date&&c.date<todayStr).sort((a,b)=>b.date.localeCompare(a.date));
+  if(!upcoming.length&&!past.length)h+=`<div class="empty">予定はまだありません。<br>「＋ 追加」から登録できます。</div>`;
+  const renderItem=(c,isPast)=>{
     let m='未定',d='—',w='';
     if(c.date){const dt=new Date(c.date+"T00:00:00");m=(dt.getMonth()+1)+'月';d=dt.getDate();w=["日","月","火","水","木","金","土"][dt.getDay()];}
-    h+=`<div class="cal-item"><div class="cal-date"><div class="m">${m}</div><div class="d num">${d}</div><div class="w">${w}</div></div>
+    return `<div class="cal-item ${isPast?'past':''}"><div class="cal-date"><div class="m">${m}</div><div class="d num">${d}</div><div class="w">${w}</div></div>
       <div class="cal-body"><div class="cal-title" onclick="editCal('${c.id}')">${esc(c.title)}</div>
         <div class="cal-meta">${c.place?esc(c.place)+'　':''}${c.note?esc(c.note):''}</div>
-        <div class="cal-actions">${c.date?`<a class="cal-gcal" href="${gcalUrl(c)}" target="_blank" rel="noopener">📅 Googleカレンダーに追加</a>`:''}
+        <div class="cal-actions">${c.date&&!isPast?`<a class="cal-gcal" href="${gcalUrl(c)}" target="_blank" rel="noopener">📅 Googleカレンダーに追加</a>`:''}
         <button class="cal-x" onclick="delCal('${c.id}')">✕</button></div>
       </div></div>`;
-  });
+  };
+  upcoming.forEach(c=>h+=renderItem(c,false));
+  if(past.length){
+    h+=`<div class="cal-divider">終了した予定</div>`;
+    past.forEach(c=>h+=renderItem(c,true));
+  }
   el.innerHTML=h;
 }
 function gcalUrl(c){
